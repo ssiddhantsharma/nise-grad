@@ -1,0 +1,18 @@
+[project]
+name = "nise-grad"
+version = "0.0.1"
+description = "Gradient-based differentiable design of small-molecule-binding proteins"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mosaic",
+    "joltz",
+    "jax",
+    "equinox",
+    "numpy",
+]
+
+[tool.uv.sources]
+# joltz pinned to the branch that adds the Boltz-2 affinity (P(bind)) head.
+joltz = { git = "https://github.com/ssiddhantsharma/joltz", branch = "add-boltz2-affinity-module" }
+mosaic = { git = "https://github.com/escalante-bio/mosaic" }
