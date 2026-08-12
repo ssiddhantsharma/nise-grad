@@ -27,5 +27,25 @@ the affinity head and MPNN both prefer hydrophobic.
 - `src/nisegrad/optimize.py` — gradient ascent: P(bind), MPNN-regularized, or on-minus-off selectivity
 - `scripts/` — the gradient check and the optimization run
 
-Built on joltz (with the affinity head) + mosaic. Needs a GPU and the Boltz-2
-checkpoints.
+## Install
+Built on joltz (with the affinity head) + mosaic. GPU:
+
+```
+pip install -e .
+# GPU jax that works with mosaic/joltz on CUDA 12 (newer nvidia libs break cuSPARSE):
+pip install "jax[cuda12]==0.10.1"
+pip install nvidia-cudnn-cu12==9.17.0.29 nvidia-cusolver-cu12==11.7.3.90 \
+            nvidia-nccl-cu12==2.28.9 nvidia-nvshmem-cu12==3.4.5
+```
+
+Checkpoints (in `~/.boltz`, or point `NISEGRAD_BOLTZ_CACHE` at a dir with `ccd.pkl` +
+`mols/`): `boltz2_conf.ckpt` (structure), `boltz2_aff.ckpt` (affinity head).
+
+## Running efficiently
+The cost is backprop through Boltz-2's diffusion structure module.
+- `num_sampling_steps` (`PbindOracle`) is the main runtime/memory knob — 2–8 steps give
+  a usable gradient; more is slower and OOMs sooner.
+- Binder length drives O(N²) memory; ~30–40 aa at 2–4 sampling steps fits a 48 GB GPU.
+- For P(bind) alone (no MPNN regularizer) you only need `structure_coordinates`, so the
+  confidence module can be skipped for a further memory/speed cut.
+- Larger designs need gradient checkpointing on the diffusion.

@@ -4,14 +4,14 @@ the sequence stays protein-like; save the curve."""
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
-from mosaic.proteinmpnn.mpnn import load_mpnn
 from mosaic.losses.protein_mpnn import ProteinMPNNLoss
+from mosaic.proteinmpnn.mpnn import load_mpnn
 
+from nisegrad.optimize import decode, optimize_pbind, sigmoid
 from nisegrad.oracle import PbindOracle
-from nisegrad.optimize import optimize_pbind, decode, sigmoid
 
 BINDER_LEN = 30
 LIGAND = "c1ccc(cc1)C(=O)O"  # benzoic acid

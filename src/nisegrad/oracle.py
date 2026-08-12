@@ -5,21 +5,19 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import boltz.model.modules.affinity as boltz_affinity
 import jax
 import jax.numpy as jnp
+import joltz
 import numpy as np
 import torch
-
-import joltz
-import boltz.model.modules.affinity as boltz_affinity
 from boltz.data import const
-
 from mosaic.losses.boltz2 import (
+    boltz2_forward_from_trunk,
+    boltz2_trunk,
     load_boltz2,
     load_features_and_structure_writer,
     set_binder_sequence,
-    boltz2_trunk,
-    boltz2_forward_from_trunk,
 )
 
 DEFAULT_CONF_CKPT = Path.home() / ".boltz" / "boltz2_conf.ckpt"

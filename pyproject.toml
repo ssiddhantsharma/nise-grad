@@ -1,18 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "nise-grad"
 version = "0.0.1"
-description = "Gradient-based differentiable design of small-molecule-binding proteins"
+description = "Gradient-based design of small-molecule-binding proteins (differentiable P(bind))"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "mosaic",
-    "joltz",
     "jax",
     "equinox",
     "numpy",
+    "optax",
+    "matplotlib",
+    "joltz @ git+https://github.com/ssiddhantsharma/joltz@add-boltz2-affinity-module",
+    "mosaic @ git+https://github.com/escalante-bio/mosaic",
 ]
 
-[tool.uv.sources]
-# joltz pinned to the branch that adds the Boltz-2 affinity (P(bind)) head.
-joltz = { git = "https://github.com/ssiddhantsharma/joltz", branch = "add-boltz2-affinity-module" }
-mosaic = { git = "https://github.com/escalante-bio/mosaic" }
+[tool.hatch.build.targets.wheel]
+packages = ["src/nisegrad"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore = ["E741"]

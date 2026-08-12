@@ -1,0 +1,16 @@
+name: ci
+# Lint + syntax only. The design runs need a GPU and the Boltz-2 checkpoints,
+# so they are not run in CI.
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check src scripts
+      - run: python -m py_compile src/nisegrad/*.py scripts/*.py
