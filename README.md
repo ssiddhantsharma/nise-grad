@@ -17,10 +17,11 @@ gradient-free selection loop. Not a fork.
 
 ## What doesn't (open problem)
 Naive gradient ascent on P(bind) reward-hacks: it drives the sequence to a degenerate
-hydrophobic string that maxes the affinity logit without being a real binder. Adding a
-ProteinMPNN log-likelihood regularizer keeps the sequence protein-like, but then P(bind)
-does not improve, the folded structure of these small de-novo binders collapses, so
-the affinity head and MPNN both prefer hydrophobic. 
+hydrophobic string that maxes the affinity logit without being a real binder. A
+ProteinMPNN log-likelihood regularizer keeps the sequence protein-like, but P(bind) then
+does not improve. Note ProteinMPNN is ligand-blind, which likely contributes to the
+collapse; a ligand-aware model (LigandMPNN) used as a snap/generator on the predicted
+pocket, then re-folded to score, is the intended next step.
 
 ## Layout
 - `src/nisegrad/oracle.py` — differentiable `P(bind)(sequence, ligand)`
