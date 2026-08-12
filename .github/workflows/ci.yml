@@ -1,6 +1,6 @@
 name: ci
-# Lint + syntax only. The design runs need a GPU and the Boltz-2 checkpoints,
-# so they are not run in CI.
+# Lint + the pure-logic unit tests. The design runs (Boltz-2 + LigandMPNN forward) need a
+# GPU and checkpoints, so they are not run in CI.
 on: [push, pull_request]
 
 jobs:
@@ -12,5 +12,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check src scripts
+      - run: ruff check src scripts tests
       - run: python -m py_compile src/nisegrad/*.py scripts/*.py
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install jax numpy pytest
+      - run: PYTHONPATH=src pytest tests -q

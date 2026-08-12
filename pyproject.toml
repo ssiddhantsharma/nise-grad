@@ -16,6 +16,7 @@ dependencies = [
     "matplotlib",
     "joltz @ git+https://github.com/ssiddhantsharma/joltz@add-boltz2-affinity-module",
     "mosaic @ git+https://github.com/escalante-bio/mosaic",
+    "jlig_mpnn @ git+https://github.com/ssiddhantsharma/jlig_mpnn",
 ]
 
 [tool.hatch.build.targets.wheel]

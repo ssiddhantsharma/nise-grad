@@ -19,13 +19,20 @@ gradient-free selection loop. Not a fork.
 Naive gradient ascent on P(bind) reward-hacks: it drives the sequence to a degenerate
 hydrophobic string that maxes the affinity logit without being a real binder. A
 ProteinMPNN log-likelihood regularizer keeps the sequence protein-like, but P(bind) then
-does not improve. Note ProteinMPNN is ligand-blind, which likely contributes to the
-collapse; a ligand-aware model (LigandMPNN) used as a snap/generator on the predicted
-pocket, then re-folded to score, is the intended next step.
+does not improve — and ProteinMPNN is *ligand-blind*, so it cannot see the interaction the
+oracle is gaming.
+
+## Ligand-aware regularizer
+`src/nisegrad/ligand_mpnn_reg.py` scores the soft binder sequence with **LigandMPNN**
+([jlig_mpnn](https://github.com/ssiddhantsharma/jlig_mpnn), a JAX port), conditioning on the
+predicted backbone *and* the ligand context. Its NLL is a drop-in `mpnn=` regularizer for
+`optimize_pbind`, differentiable in the sequence. Whether ligand-awareness resolves the
+collapse is the open question this is built to test (needs a Boltz-2 GPU run).
 
 ## Layout
 - `src/nisegrad/oracle.py` — differentiable `P(bind)(sequence, ligand)`
 - `src/nisegrad/optimize.py` — gradient ascent: P(bind), MPNN-regularized, or on-minus-off selectivity
+- `src/nisegrad/ligand_mpnn_reg.py` — ligand-aware LigandMPNN sequence regularizer
 - `scripts/` — the gradient check and the optimization run
 
 ## Install
