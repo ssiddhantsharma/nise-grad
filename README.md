@@ -1,5 +1,8 @@
 # nise-grad
 
+[![CI](https://github.com/ssiddhantsharma/nise-grad/actions/workflows/ci.yml/badge.svg)](https://github.com/ssiddhantsharma/nise-grad/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Design small-molecule-binding proteins by gradient descent: optimize the binder
 sequence directly through a differentiable structure model (joltz / Boltz-2) and a
 differentiable P(bind).

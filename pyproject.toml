@@ -7,6 +7,7 @@ name = "nise-grad"
 version = "0.0.1"
 description = "Gradient-based design of small-molecule-binding proteins (differentiable P(bind))"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "jax",
