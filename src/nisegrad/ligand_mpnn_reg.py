@@ -37,24 +37,25 @@ def nll_from_logprobs(soft_mpnn, log_probs, binder_mask):
 class LigandMPNNRegularizer:
     """Callable matching optimize_pbind's `mpnn(soft, output, key) -> (nll, aux)` interface.
 
-    model         : jlig_mpnn.LigandMPNN (from_torch of a real checkpoint)
-    feats         : dict of the fixed LigandMPNN inputs (mask, Y, Y_m, Y_t, R_idx,
-                    chain_labels, chain_mask, randn), each batched [1, ...]
-    coords_from_output : output -> backbone X [1, L, 4, 3] (N, Ca, C, O)
-    binder_mask   : [L] float, 1.0 on designed binder residues
+    model  : jlig_mpnn.LigandMPNN (from_torch of a real checkpoint)
+    feats  : dict of the FIXED LigandMPNN inputs (mask, Y_m, Y_t, R_idx, chain_labels,
+             chain_mask, randn), each batched [1, ...] -- everything but the coordinates
+    struct_from_output : output -> (X [1,L,4,3] binder backbone N/Ca/C/O, Y [1,L,M,3]
+             ligand-atom context) -- both differentiable, taken from the predicted structure
+    binder_mask : [L] float, 1.0 on designed binder residues
     """
 
-    def __init__(self, model, feats: dict, coords_from_output, binder_mask):
+    def __init__(self, model, feats: dict, struct_from_output, binder_mask):
         self.model = model
         self.feats = feats
-        self.coords_from_output = coords_from_output
+        self.struct_from_output = struct_from_output
         self.binder_mask = binder_mask
 
     def __call__(self, soft_af, output, key):
         f = self.feats
-        X = self.coords_from_output(output)
+        X, Y = self.struct_from_output(output)
         soft_mpnn = af20_to_mpnn20(soft_af)  # [L,20]
         log_probs = self.model.score_soft(
-            soft_mpnn[None], X, f["mask"], f["Y"], f["Y_m"], f["Y_t"],
+            soft_mpnn[None], X, f["mask"], Y, f["Y_m"], f["Y_t"],
             f["R_idx"], f["chain_labels"], f["chain_mask"], f["randn"])[0]  # [L,21]
         return nll_from_logprobs(soft_mpnn, log_probs, self.binder_mask), None
