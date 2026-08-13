@@ -79,14 +79,20 @@ class PbindOracle:
         ).astype(jnp.float32)
         return features
 
-    def pbind_and_output(self, soft_sequence, features: dict, key):
-        """(binding logit, StructureModelOutput) for soft_sequence against the ligand."""
+    def pbind_and_output(self, soft_sequence, features: dict, key,
+                         recycling_steps: int = 0, num_sampling_steps: int | None = None):
+        """(binding logit, StructureModelOutput) for soft_sequence against the ligand.
+
+        recycling_steps=0 (default) is the fast per-gradient-step setting, but it yields
+        non-physical geometry; use recycling_steps=3 for a physical structure (e.g. a
+        frozen scaffold for a structure-based prior)."""
         feats = set_binder_sequence(soft_sequence, features)
         init_emb, trunk = boltz2_trunk(
-            self.model, feats, recycling_steps=0, deterministic=True, key=key)
+            self.model, feats, recycling_steps=recycling_steps, deterministic=True, key=key)
         output = boltz2_forward_from_trunk(
             self.model, feats, init_emb, trunk,
-            num_sampling_steps=self.num_sampling_steps, deterministic=True, key=key)
+            num_sampling_steps=num_sampling_steps or self.num_sampling_steps,
+            deterministic=True, key=key)
         aff = self.affinity(
             init_emb.s_inputs, trunk.z, output.structure_coordinates, feats,
             multiplicity=1, key=key, deterministic=True)

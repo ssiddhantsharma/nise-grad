@@ -14,6 +14,7 @@ the use_side_chains=False model expects, no per-residue topk needed.
 
 from __future__ import annotations
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 from boltz.data import const
@@ -21,8 +22,15 @@ from boltz.data import const
 from .ligand_mpnn_reg import LigandMPNNRegularizer
 
 
-def build_boltz_regularizer(model, features: dict, *, randn_seed: int = 0):
-    """Return a LigandMPNNRegularizer wired to this complex's fixed featurization."""
+def build_boltz_regularizer(model, features: dict, *, frozen_output=None, randn_seed: int = 0):
+    """Return a LigandMPNNRegularizer wired to this complex's fixed featurization.
+
+    frozen_output: a StructureModelOutput to freeze the backbone + ligand geometry from
+    (fold once with recycling_steps>=3 for a physical scaffold). When given, the regularizer
+    scores every step's soft sequence against this fixed physical structure -- the correct way
+    to use an inverse-folding prior. When None, it reads each step's live (recycling=0) output,
+    which is non-physical and only kept for comparison.
+    """
     mol_type = np.asarray(features["mol_type"])[0]                    # [T]
     a2t = np.asarray(features["atom_to_token"])[0].argmax(-1)         # [A] token per atom
     apm = np.asarray(features["atom_pad_mask"])[0] > 0.5              # [A]
@@ -52,10 +60,18 @@ def build_boltz_regularizer(model, features: dict, *, randn_seed: int = 0):
         "randn": jnp.asarray(np.random.RandomState(randn_seed).randn(1, L), jnp.float32),
     }
 
-    def struct_from_output(output):
+    def extract(output):
         X = output.backbone_coordinates[binder_idx][None]           # [1,L,4,3] N,CA,C,O
         Y_atoms = output.structure_coordinates[0][lig_idx]          # [M,3]
         Y = jnp.broadcast_to(Y_atoms, (L, M, 3))[None]              # [1,L,M,3]
         return X, Y
+
+    if frozen_output is not None:
+        X0, Y0 = jax.lax.stop_gradient(extract(frozen_output)[0]), \
+            jax.lax.stop_gradient(extract(frozen_output)[1])
+        def struct_from_output(_output):
+            return X0, Y0
+    else:
+        struct_from_output = extract
 
     return LigandMPNNRegularizer(model, feats, struct_from_output, jnp.ones(L))

@@ -47,15 +47,21 @@ def load_jlig(ckpt):
 
 def main():
     jmodel = load_jlig(os.environ["LIGANDMPNN_CKPT"])
-    oracle = PbindOracle(num_sampling_steps=2)
+    oracle = PbindOracle(num_sampling_steps=2)  # fast per-step fold for the P(bind) gradient
     feats = oracle.features_for("G" * BINDER_LEN, LIGAND)
-    reg = build_boltz_regularizer(jmodel, feats)
 
-    # sanity: one fold, confirm the extracted backbone is real geometry before optimizing
+    # Fold a PHYSICAL scaffold ONCE with recycling (no gradient) and freeze it. The recycling=0
+    # per-step structure is noise (~0/119 backbone bonds); recycling=3 gives 119/119. LigandMPNN
+    # is an inverse-folding prior, so scoring the sequence against a fixed physical backbone is
+    # the correct use -- and it makes the geometry gate below pass.
     key = jax.random.PRNGKey(0)
     soft0 = jax.nn.softmax(0.1 * jax.random.normal(key, (BINDER_LEN, 20)), axis=-1)
-    _, out = oracle.pbind_and_output(soft0, feats, key)
-    X, Y = reg.struct_from_output(out)
+    _, scaffold = oracle.pbind_and_output(
+        soft0, feats, key, recycling_steps=3, num_sampling_steps=100)
+    reg = build_boltz_regularizer(jmodel, feats, frozen_output=scaffold)
+
+    # sanity: confirm the frozen scaffold is real geometry before optimizing
+    X, Y = reg.struct_from_output(scaffold)
     N, CA, C = X[0, :, 0], X[0, :, 1], X[0, :, 2]
     d_nca = float(jnp.linalg.norm(CA - N, axis=-1).mean())
     d_cac = float(jnp.linalg.norm(C - CA, axis=-1).mean())
