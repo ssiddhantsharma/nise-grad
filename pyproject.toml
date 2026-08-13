@@ -19,6 +19,9 @@ dependencies = [
     "jlig_mpnn @ git+https://github.com/ssiddhantsharma/jlig_mpnn",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true  # deps below are git+https (joltz, mosaic, jlig_mpnn)
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/nisegrad"]
 
