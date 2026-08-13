@@ -37,14 +37,18 @@ def _run(loss_fn, binder_len, *, steps, lr, seed, label):
 
 
 def optimize_pbind(oracle, features, binder_len, *, mpnn=None, mpnn_weight=1.0,
-                   steps=40, lr=0.05, seed=0, key_seed=0):
+                   steps=40, lr=0.05, seed=0, key_seed=0, recycling_steps=0):
     """Ascend P(bind), optionally regularized by an MPNN sequence log-likelihood so the
-    binder stays protein-like. Returns (final_logits, per-step P(bind) logits)."""
+    binder stays protein-like. Returns (final_logits, per-step P(bind) logits).
+
+    recycling_steps>0 folds a physical structure each step (slower, more memory), so both
+    P(bind) and a live structure prior see real geometry instead of recycling=0 noise."""
     key = jax.random.PRNGKey(key_seed)
 
     def loss_fn(logits):
         soft = jax.nn.softmax(logits, axis=-1)
-        pbind, output = oracle.pbind_and_output(soft, features, key)
+        pbind, output = oracle.pbind_and_output(
+            soft, features, key, recycling_steps=recycling_steps)
         loss = -pbind
         if mpnn is not None:
             mpnn_nll, _ = mpnn(soft, output, key)   # negative log-likelihood
