@@ -26,8 +26,27 @@ oracle is gaming.
 `src/nisegrad/ligand_mpnn_reg.py` scores the soft binder sequence with **LigandMPNN**
 ([jlig_mpnn](https://github.com/ssiddhantsharma/jlig_mpnn), a JAX port), conditioning on the
 predicted backbone *and* the ligand context. Its NLL is a drop-in `mpnn=` regularizer for
-`optimize_pbind`, differentiable in the sequence. Whether ligand-awareness resolves the
-collapse is the open question this is built to test (needs a Boltz-2 GPU run).
+`optimize_pbind`, differentiable in the sequence. `src/nisegrad/boltz_ligand.py` maps a Boltz
+feature dict + output into LigandMPNN inputs (verified against the real feature layout);
+`scripts/optimize_pbind_ligandmpnn.py` runs it, with a geometry-gated sanity fold first.
+
+### GPU finding: the oracle's structures are too rough for a geometry prior
+A LigandMPNN prior needs a *physical* backbone. The sanity gate showed the differentiable
+Boltz-2 oracle does not provide one in the regime this method runs in:
+
+| sampling steps | backbone bonds found (of ~119) | coordinate span |
+|---|---|---|
+| 2 (what `optimize_pbind` uses) | ~0 — coords are ±4000 Å noise | noise |
+| 25 | 10 | ±28 Å but clashing |
+| 50 | 19 | ±28 Å but clashing |
+
+Full Boltz needs ~200 steps for physical geometry; that many is intractable for a per-step
+gradient loop (memory + time). So conditioning on the predicted structure gives no useful
+signal here — which is the same reason the ligand-*blind* ProteinMPNN prior above does not
+help. **Ligand-awareness cannot fix the reward-hacking through structure when there is no
+reliable structure to be aware of.** The extractor and geometry gate are kept: they make the
+regularizer correct and drop-in the moment a folder returns physical coordinates (a
+higher-step / cached-structure oracle, or a sequence-only ligand prior).
 
 ## Layout
 - `src/nisegrad/oracle.py` — differentiable `P(bind)(sequence, ligand)`
