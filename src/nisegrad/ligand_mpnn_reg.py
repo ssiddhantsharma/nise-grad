@@ -1,4 +1,4 @@
-"""Ligand-aware sequence regularizer, backed by jlig_mpnn (JAX LigandMPNN).
+"""Ligand-aware sequence regularizer, backed by jligandmpnn (JAX LigandMPNN).
 
 The binder's soft sequence is scored by LigandMPNN given the predicted backbone AND the
 ligand context, so the negative log-likelihood keeps the design both protein-like and
@@ -37,7 +37,7 @@ def nll_from_logprobs(soft_mpnn, log_probs, binder_mask):
 class LigandMPNNRegularizer:
     """Callable matching optimize_pbind's `mpnn(soft, output, key) -> (nll, aux)` interface.
 
-    model  : jlig_mpnn.LigandMPNN (from_torch of a real checkpoint)
+    model  : jligandmpnn.LigandMPNN (from_torch of a real checkpoint)
     feats  : dict of the FIXED LigandMPNN inputs (mask, Y_m, Y_t, R_idx, chain_labels,
              chain_mask, randn), each batched [1, ...] -- everything but the coordinates
     struct_from_output : output -> (X [1,L,4,3] binder backbone N/Ca/C/O, Y [1,L,M,3]

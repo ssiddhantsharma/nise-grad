@@ -1,6 +1,6 @@
 """How the ligand-aware-regularizer recipe was arrived at, in three measurements.
 
-The numbers below were measured on an A6000 (30aa binder vs benzoic acid, jlig_mpnn +
+The numbers below were measured on an A6000 (30aa binder vs benzoic acid, jligandmpnn +
 Boltz-2). This script just plots them into figures/recipe_convergence.png; the code that
 produced each block is noted so it can be regenerated. Run: `python scripts/recipe_convergence.py`.
 """

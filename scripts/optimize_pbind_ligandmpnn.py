@@ -1,4 +1,4 @@
-"""Optimize a 30aa binder vs benzoic acid with the LIGAND-AWARE (jlig_mpnn) regularizer --
+"""Optimize a 30aa binder vs benzoic acid with the LIGAND-AWARE (jligandmpnn) regularizer --
 the ligand-aware counterpart to optimize_pbind.py's ligand-blind ProteinMPNN baseline.
 
 The question this answers: does conditioning the sequence prior on the ligand (LigandMPNN)
@@ -24,7 +24,7 @@ import torch
 
 sys.path.insert(0, os.environ["LIGMPNN_MODEL_DIR"])
 import ligmpnn_model as ref
-from jlig_mpnn.model import LigandMPNN
+from jligandmpnn.model import LigandMPNN
 
 from nisegrad.boltz_ligand import build_boltz_regularizer
 from nisegrad.optimize import decode, optimize_pbind, sigmoid
