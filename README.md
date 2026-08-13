@@ -9,43 +9,43 @@ P(bind). A gradient counterpart to NISE (Polizzi lab,
 https://www.nature.com/articles/s41586-026-10670-w), which does the same job with a
 gradient-free selection loop. Not a fork.
 
-## What works
-The machinery: P(bind) is differentiable end to end, the gradient of the Boltz-2 affinity head
-flows to the soft binder sequence (`scripts/spike_affinity_gradient.py`), and
-`optimize_pbind` ascends it.
-
-## What doesn't (the honest result)
-Naive gradient ascent on P(bind) **reward-hacks, and its soft optimum does not transfer to a
-discrete sequence.** Measured on a 30aa binder vs benzoic acid (`figures/gradient_reality.png`,
-`scripts/gradient_reality.py`):
+## The result
+Naive gradient ascent on the *soft* sequence reward-hacks: its optimum (soft P(bind) ~0.8) does
+not transfer to a discrete sequence (discrete 0.1-0.3), and the designs are degenerate (poly-Leu
+or poly-Phe). A **straight-through discrete step** fixes it: feed the oracle the discrete argmax
+in the forward pass (so the objective is the real discrete P(bind)) and pass the gradient
+through the soft distribution.
 
 ![gradient reality](figures/gradient_reality.png)
 
-- The optimizer drives the **soft** sequence to P(bind) ~0.8, but the P(bind) of the
-  **discrete** argmax, refolded, is only 0.1-0.3. The continuous optimum sits between real
-  sequences.
-- The designs are degenerate: an all-hydrophobic string at `num_sampling_steps=2`, an
-  all-aromatic (poly-Phe) string at `nss=25`.
-- And the structure the affinity head scores is only physical (119/119 backbone bonds) at
-  `nss>=25`; `nss=2` is noise. Physical geometry costs ~25x (6.7 vs 0.26 s/step at 30aa).
+Measured on a 30aa binder vs benzoic acid (recycling=3, `num_sampling_steps=25` for physical
+geometry):
 
-So gradient-through-Boltz optimizes an adversarial soft-sequence direction, not a real binder.
-This is why **NISE spends its GPU on thousands of *discrete* LigandMPNN samples with full
-folds**: only ever scoring real, discrete sequences structurally avoids these soft-sequence
-optima. The open problem here is bridging the soft-to-discrete gap (a discrete/straight-through
-estimator, or a sequence prior strong enough to keep the soft state near real sequences).
+| | discrete P(bind) | composition | fold |
+|---|---|---|---|
+| naive (soft) | 0.11-0.34 | degenerate (hyd 0.7-0.9) | |
+| **straight-through** | **0.64** | **realistic (hyd 0.43)** | 119/119 bonds, pLDDT 0.79 |
 
-## Ligand-aware prior (a lever, not a fix)
-`src/nisegrad/ligand_mpnn_reg.py` scores the soft sequence with LigandMPNN
-([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)), a drop-in `mpnn=` term for
-`optimize_pbind`. It pulls the sequence toward realistic composition, but the P(bind) gradient
-is ~28x larger, so it only wins at a large weight (which then just inverse-folds the scaffold).
-`src/nisegrad/boltz_ligand.py` builds it from a Boltz feature dict + output.
+```python
+optimize_pbind(oracle, feats, 30, steps=25, recycling_steps=3,
+               num_sampling_steps=25, straight_through=True)
+```
+This keeps NISE's key principle -- only score real discrete sequences -- but reaches a design in
+~25 gradient steps (~25 recycled folds) instead of NISE's thousands. Caveats: single seed,
+single ligand, P(bind) is the Boltz-2 oracle (not an experiment), and physical geometry needs
+`nss>=25` (~25x slower than nss=2). `scripts/gradient_reality.py` regenerates the figure.
+
+## Optional: ligand-aware prior
+`src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
+([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) sequence prior as a drop-in
+`mpnn=` term (`src/nisegrad/boltz_ligand.py` builds it from a Boltz feature dict + output),
+useful for pushing composition or selectivity further.
 
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)` (`recycling_steps`,
-  `num_sampling_steps` knobs)
-- `src/nisegrad/optimize.py` gradient ascent: P(bind), MPNN-regularized, or on-minus-off
+  `num_sampling_steps`)
+- `src/nisegrad/optimize.py` gradient ascent: P(bind) (with `straight_through`), MPNN-regularized,
+  or on-minus-off selectivity
 - `src/nisegrad/ligand_mpnn_reg.py`, `boltz_ligand.py` the optional ligand-aware prior
 - `scripts/` gradient check, optimization runs, and the figure
 
@@ -62,8 +62,8 @@ Checkpoints (in `~/.boltz`, or point `NISEGRAD_BOLTZ_CACHE` at a dir with `ccd.p
 `boltz2_conf.ckpt` (structure), `boltz2_aff.ckpt` (affinity head).
 
 ## Running / efficiency
+- `straight_through=True` optimizes the discrete objective (use it).
 - `num_sampling_steps`: 2 is fast but non-physical; >=25 for real geometry, ~25x slower.
-- `recycling_steps`: helps the trunk but does not make `nss=2` structures physical.
 - Independent designs are embarrassingly parallel: one per GPU (data-parallel / `pmap`) for
-  campaign throughput. A single design is not easily split across GPUs (would need model
-  sharding); use gradient checkpointing for the `nss>=25` memory.
+  campaign throughput. A single design is not easily split across GPUs; use gradient
+  checkpointing for the `nss>=25` memory.

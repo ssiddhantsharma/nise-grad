@@ -1,6 +1,5 @@
 {
-  "soft_hard": {"nss2": {"soft": 0.87, "hard": 0.11}, "nss25": {"soft": 0.76, "hard": 0.34}},
-  "physicality": {"nss2_bonds": 0, "nss25_bonds": 119},
-  "cost": {"nss2_sec": 0.26, "nss25_sec": 6.7},
-  "note": "30aa binder vs benzoic acid, recycling=3, A6000. soft=optimizer objective on the soft sequence; hard=P(bind) of the discrete argmax refolded."
+  "discrete_pbind": {"naive nss=2": 0.11, "naive nss=25": 0.34, "STE nss=25": 0.64},
+  "hydrophobic": {"naive nss=2": 0.90, "naive nss=25": 0.70, "STE nss=25": 0.43},
+  "note": "30aa binder vs benzoic acid, recycling=3, A6000. discrete = P(bind) of the argmax sequence refolded. naive optimizes the soft sequence (reward-hacks, degenerate); STE (straight_through=True) optimizes the discrete objective. STE design: 119/119 bonds, plddt 0.79."
 }
