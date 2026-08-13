@@ -1,0 +1,6 @@
+{
+  "soft_hard": {"nss2": {"soft": 0.87, "hard": 0.11}, "nss25": {"soft": 0.76, "hard": 0.34}},
+  "physicality": {"nss2_bonds": 0, "nss25_bonds": 119},
+  "cost": {"nss2_sec": 0.26, "nss25_sec": 6.7},
+  "note": "30aa binder vs benzoic acid, recycling=3, A6000. soft=optimizer objective on the soft sequence; hard=P(bind) of the discrete argmax refolded."
+}
