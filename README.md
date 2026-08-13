@@ -44,8 +44,9 @@ harder ligands are more variable (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.7
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
 ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) sequence prior as a drop-in
-`mpnn=` term (built from a Boltz output by `src/nisegrad/boltz_ligand.py`), for pushing
-composition or selectivity further.
+`mpnn=` term (built from a Boltz output by `src/nisegrad/boltz_ligand.py`). On top of STE it
+*lowers* P(bind) (0.62 -> 0.38-0.50 as its weight rises) -- it pulls toward the MPNN preference,
+so it is for selectivity, not for raising binding. STE alone already gives realistic composition.
 
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`
