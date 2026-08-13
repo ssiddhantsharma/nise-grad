@@ -33,7 +33,7 @@ from nisegrad.oracle import PbindOracle
 BINDER_LEN = 30
 LIGAND = "c1ccc(cc1)C(=O)O"  # benzoic acid
 STEPS = 30
-MPNN_WEIGHT = 2.0
+MPNN_WEIGHT = float(os.environ.get("MPNN_WEIGHT", "2.0"))
 
 
 def load_jlig(ckpt):
@@ -71,7 +71,9 @@ def main():
 
     logits, traj = optimize_pbind(
         oracle, feats, BINDER_LEN, mpnn=reg, mpnn_weight=MPNN_WEIGHT, steps=STEPS, lr=0.05)
-    print("sequence:", decode(logits))
+    seq = decode(logits)
+    hyd = sum(c in "AVLIMFWC" for c in seq) / len(seq)
+    print(f"sequence: {seq}  (hydrophobic fraction {hyd:.2f}; collapse ~1.0, realistic ~0.45)")
     print(f"P(bind) {sigmoid(traj[0]):.4f} -> {sigmoid(traj[-1]):.4f}")
 
     fig_dir = Path(__file__).resolve().parents[1] / "figures"
