@@ -31,14 +31,15 @@ logits still get a gradient. Enable it with `optimize_pbind(..., straight_throug
 
 ![gradient reality](figures/gradient_reality.png)
 
-*Naive vs STE on a 30aa binder (recycling=3, `num_sampling_steps=25` for physical geometry).
-STE reaches discrete P(bind) 0.6-0.7 with realistic composition and a well-folded structure
-(119/119 backbone bonds, pLDDT ~0.8); naive stays degenerate at 0.1-0.3.*
+*30aa binder, recycling=3, `num_sampling_steps=25`, 3 seeds each. Naive's soft P(bind) reaches
+~0.9, but the discrete design scores 0.33-0.41 and is degenerate. STE optimizes the discrete
+design directly: 0.44-0.73 with realistic composition, well-folded (119/119 backbone bonds,
+pLDDT ~0.8).*
 
 This keeps NISE's principle -- only ever score real discrete sequences -- in ~25 gradient steps
 instead of NISE's thousands of folds. Caveats: P(bind) is the Boltz-2 oracle, not an experiment;
-harder ligands are more variable (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73 over 3 seeds);
-`nss>=25` is ~25x slower than `nss=2`. Runnable: `scripts/optimize_ste.py`.
+harder ligands are more variable (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is
+~25x slower than `nss=2`. Runnable: `scripts/optimize_ste.py`.
 
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN

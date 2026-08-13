@@ -1,0 +1,10 @@
+{
+  "naive_soft": [0.92, 0.92, 0.93],
+  "naive_discrete": [0.41, 0.35, 0.33],
+  "naive_hyd": [0.63, 0.67, 0.67],
+  "ste_benzoic": [0.62, 0.73, 0.67],
+  "ste_benzoic_hyd": [0.47, 0.37, 0.53],
+  "ste_sulfonamide": [0.44, 0.66, 0.58],
+  "ste_sulfonamide_hyd": [0.63, 0.50, 0.57],
+  "note": "30aa binder, recycling=3, nss=25, A6000, 3 seeds each. discrete = P(bind) of the argmax refolded."
+}
