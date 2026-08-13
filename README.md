@@ -42,6 +42,20 @@ Caveats: P(bind) is the Boltz-2 oracle, not an experiment; harder ligands are mo
 (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is ~25x slower than `nss=2`.
 Runnable: `scripts/optimize_ste.py`.
 
+## But the designs overfit the oracle
+STE closes the soft-to-discrete gap *within Boltz* -- it does not make real binders. Refolding
+the designs with an independent model (Protenix-v2) tells the truth:
+
+![oracle overfit](figures/oracle_overfit.png)
+
+*The STE designs score high on the optimized oracle (Boltz P(bind) 0.73-0.82) but low on
+Protenix ipTM (0.30-0.42), no better than a scramble of their own residues. A real,
+experimentally-validated binder (NISE's apixaban binder) folded under identical settings scores
+0.98, so Protenix discriminates and the low scores are real failures.* `scripts/oracle_overfit.py`.
+
+Optimizing a single differentiable oracle games that oracle. Cross-model agreement, or
+multi-oracle optimization, is the real bar.
+
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
 ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) sequence prior as a drop-in
