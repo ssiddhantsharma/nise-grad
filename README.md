@@ -37,9 +37,10 @@ design directly: 0.44-0.73 with realistic composition, well-folded (119/119 back
 pLDDT ~0.8).*
 
 This keeps NISE's principle -- only ever score real discrete sequences -- in ~25 gradient steps
-instead of NISE's thousands of folds. Caveats: P(bind) is the Boltz-2 oracle, not an experiment;
-harder ligands are more variable (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is
-~25x slower than `nss=2`. Runnable: `scripts/optimize_ste.py`.
+instead of NISE's thousands of folds; best-of-8 seeds on benzoic acid reaches P(bind) 0.82.
+Caveats: P(bind) is the Boltz-2 oracle, not an experiment; harder ligands are more variable
+(sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is ~25x slower than `nss=2`.
+Runnable: `scripts/optimize_ste.py`.
 
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
