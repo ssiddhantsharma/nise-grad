@@ -7,7 +7,11 @@ Design small-molecule-binding proteins by gradient descent: optimize the binder 
 directly through a differentiable structure model (Boltz-2 via joltz) and a differentiable
 P(bind). A gradient counterpart to NISE (Polizzi lab,
 https://www.nature.com/articles/s41586-026-10670-w), which does the same job with a
-gradient-free selection loop. Not a fork.
+gradient-free selection loop. Not a fork. This is *differentiable* guidance (backprop the oracle
+gradient into the sequence, cf. DRaFT, Clark et al. 2023); the surrounding guidance literature
+keeps the oracle black-box -- FK-steering, DPO, O3 (Kalisz et al. 2026) -- because real
+biological oracles are non-differentiable. Ours is differentiable only because the oracle is a
+*model*, which is both why it is cheap and why it overfits.
 
 **Status: active.** A straight-through estimator fixes gradient design's soft-to-discrete gap,
 but the designs overfit whichever oracle they were optimized against, and a second *head* of the
@@ -64,7 +68,10 @@ Optimizing a single oracle games it. A second *head* of the same model
 (`optimize_pbind(confidence_weight>0)`) does **not** help -- the design games both heads. But
 Boltz and jopendde *disagree* on the hacked designs while *agreeing* on a real binder, so they
 are independent enough to optimize jointly. **Current direction:** a multi-oracle
-(Boltz+jopendde) STE objective, with Protenix held out as the transfer judge.
+(Boltz+jopendde) STE objective, with Protenix held out as the transfer judge. A model optimized
+against its own head overfits by construction, so the honest test is a *matched oracle budget*
+scored on a held-out oracle: at equal folds, does gradient guidance beat Best-K-of-N sampling on
+an oracle it never saw? (`scripts/matched_budget.py`, `scripts/heldout_score.py`).
 
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
