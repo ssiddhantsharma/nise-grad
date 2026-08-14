@@ -76,7 +76,7 @@ an oracle it never saw? (`scripts/matched_budget.py`, `scripts/heldout_score.py`
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`
 - `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
-- `scripts/` gradient check, STE run, matched-budget sweep, figures
+- `scripts/` STE run, matched-budget sweep, figures
 
 ## Install
 ```

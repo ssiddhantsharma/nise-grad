@@ -57,7 +57,7 @@ def load_affinity_head(aff_ckpt: Path = DEFAULT_AFF_CKPT):
 
 
 class PbindOracle:
-    """Boltz-2 structure + affinity head, loaded once; pbind_logit is differentiable in the sequence."""
+    """Boltz-2 structure + affinity head, loaded once; pbind_and_output is differentiable in the sequence."""
 
     def __init__(self, conf_ckpt: Path = DEFAULT_CONF_CKPT,
                  aff_ckpt: Path = DEFAULT_AFF_CKPT,
@@ -97,7 +97,3 @@ class PbindOracle:
             init_emb.s_inputs, trunk.z, output.structure_coordinates, feats,
             multiplicity=1, key=key, deterministic=True)
         return aff["affinity_logits_binary"].reshape(()), output
-
-    def pbind_logit(self, soft_sequence, features: dict, key):
-        """Binding logit for soft_sequence [binder_len, 20] against the ligand."""
-        return self.pbind_and_output(soft_sequence, features, key)[0]
