@@ -36,13 +36,15 @@ def main():
     for row in rows:
         ip = iptm(p, key, row["seq"], row["ligand"])
         row["jopendde_iptm"] = ip
-        by.setdefault(row["method"], []).append(ip)
+        by.setdefault((row["method"], row["budget"]), []).append(ip)
         Path(a.inp).write_text(json.dumps(rows, indent=2))
-        print(f"HELDOUT {row['method']:<6} run {row['run']}  boltz {row['boltz_pbind']:.2f}  "
-              f"jopendde_iptm {ip:.2f}  {row['seq']}", flush=True)
+        print(f"HELDOUT {row['method']:<6} seed {row['seed']} budget {row['budget']:3d}  "
+              f"boltz {row['boltz_pbind']:.2f}  jopendde_iptm {ip:.2f}  {row['seq']}", flush=True)
     print("---")
-    for m, xs in by.items():
-        print(f"MEAN {m:<6} jopendde_iptm {sum(xs) / len(xs):.2f} (n={len(xs)})", flush=True)
+    for (m, b) in sorted(by):
+        xs = by[(m, b)]
+        print(f"MEAN {m:<6} budget {b:3d}  jopendde_iptm {sum(xs) / len(xs):.2f} (n={len(xs)})",
+              flush=True)
 
 
 if __name__ == "__main__":
