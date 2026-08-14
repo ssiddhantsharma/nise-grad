@@ -11,17 +11,15 @@ license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "jax",
-    "equinox",
     "numpy",
     "optax",
     "matplotlib",
     "joltz @ git+https://github.com/nboyd/joltz",
     "mosaic @ git+https://github.com/escalante-bio/mosaic",
-    "jligandmpnn @ git+https://github.com/ssiddhantsharma/jligandmpnn",
 ]
 
 [tool.hatch.metadata]
-allow-direct-references = true  # deps below are git+https (joltz, mosaic, jligandmpnn)
+allow-direct-references = true  # deps below are git+https (joltz, mosaic)
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nisegrad"]

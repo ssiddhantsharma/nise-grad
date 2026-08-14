@@ -73,18 +73,10 @@ against its own head overfits by construction, so the honest test is a *matched 
 scored on a held-out oracle: at equal folds, does gradient guidance beat Best-K-of-N sampling on
 an oracle it never saw? (`scripts/matched_budget.py`, `scripts/heldout_score.py`).
 
-## Optional: ligand-aware prior
-`src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
-([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) sequence prior as a drop-in
-`mpnn=` term (built from a Boltz output by `src/nisegrad/boltz_ligand.py`). On top of STE it
-*lowers* P(bind) (0.62 -> 0.38-0.50 as its weight rises) -- it pulls toward the MPNN preference,
-so it is for selectivity, not for raising binding. STE alone already gives realistic composition.
-
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`
-- `src/nisegrad/optimize.py` gradient ascent (`straight_through`, MPNN-regularized, selectivity)
-- `src/nisegrad/ligand_mpnn_reg.py`, `boltz_ligand.py` optional ligand-aware prior
-- `scripts/` gradient check, optimization runs, figure
+- `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
+- `scripts/` gradient check, STE run, matched-budget sweep, figures
 
 ## Install
 ```
