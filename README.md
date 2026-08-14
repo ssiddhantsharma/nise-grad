@@ -9,6 +9,13 @@ P(bind). A gradient counterpart to NISE (Polizzi lab,
 https://www.nature.com/articles/s41586-026-10670-w), which does the same job with a
 gradient-free selection loop. Not a fork.
 
+**Status: a finished methods study, not a binder pipeline.** A straight-through estimator fixes
+gradient design's soft-to-discrete gap, but the designs then overfit whichever oracle they were
+optimized against (they do not transfer to an independent model), and a second *head* of the
+same model does not help. Escaping that needs a genuinely independent oracle in the loop and,
+ultimately, wet-lab validation. The reusable pieces are the STE optimizer and
+[jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
+
 ## The problem: naive gradient reward-hacks
 Optimizing the *soft* (continuous) sequence maximizes a fiction. Its optimum sits between real
 amino acids, so the soft P(bind) climbs to ~0.8, but the discrete argmax sequence, refolded,
