@@ -6,10 +6,13 @@ every step and Best-K-of-N's best-so-far only improves, ONE run to max(checkpoin
 design at every checkpoint, so a single process per (method, seed) sweeps all budgets. Winners
 are scored later on a held-out oracle (heldout_score.py); the transfer edge vs budget is the point.
 
-One run per process (a second optimize/jit in the same process leaks a JAX tracer):
+Methods: ste (gradient), bestn (Best-K-of-N sampling), o3 (latent Bayesian optimization, an
+adapted Kalisz et al. 2026 baseline). One run per process (a second optimize/jit in the same
+process leaks a JAX tracer):
 
   for s in 0 1 2 3 4; do python matched_budget.py --method ste   --seed $s --out sweep.json; done
   for s in 0 1 2 3 4; do python matched_budget.py --method bestn --seed $s --out sweep.json; done
+  for s in 0 1 2 3 4; do python matched_budget.py --method o3    --seed $s --out sweep.json; done
 """
 
 import argparse
@@ -70,9 +73,65 @@ def bestn_sweep(oracle, feats, binder_len, checkpoints, seed):
     return snaps
 
 
+def o3_sweep(oracle, feats, binder_len, checkpoints, seed, n_seed=8, n_dims=6, pool=512):
+    """O3-style latent Bayesian optimization (Kalisz et al. 2026), adapted to sequence design.
+
+    O3 builds a low-dimensional subspace of a generative model's output space from a few top
+    seeds and runs an off-the-shelf optimizer over it. Kalisz optimize structure-generation
+    latents for conformation recovery; for de-novo design the natural output space is the binder
+    logit simplex, so we build the subspace by PCA of n_seed random seed-logit vectors and run a
+    Gaussian-process / expected-improvement loop over it. Gradient-free, same fold budget as STE
+    and Best-K-of-N (forward queries). Records running-best at each checkpoint."""
+    from scipy.stats import norm
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import RBF, ConstantKernel
+
+    key = jax.random.PRNGKey(0)
+    fold_score = jax.jit(lambda oh: oracle.pbind_and_output(
+        oh, feats, key, recycling_steps=3, num_sampling_steps=25)[0])
+    rng = np.random.default_rng(seed)
+    budget, cps, snaps = max(checkpoints), set(checkpoints), {}
+    best_p, best_s = -1e9, None
+
+    def fold_logits(flat):
+        oh = jax.nn.one_hot(jnp.argmax(jnp.asarray(flat).reshape(binder_len, 20), -1), 20)
+        return float(fold_score(oh)), "".join(AA_ORDER[j] for j in np.asarray(oh).argmax(-1))
+
+    def observe(p, s, n):
+        nonlocal best_p, best_s
+        if p > best_p:
+            best_p, best_s = p, s
+        if n in cps:
+            snaps[n] = (best_s, sigmoid(best_p))
+
+    X = np.stack([0.1 * rng.standard_normal(binder_len * 20) for _ in range(n_seed)])
+    y, n = [], 0
+    for flat in X:
+        p, s = fold_logits(flat)
+        y.append(p)
+        n += 1
+        observe(p, s, n)
+    mean = X.mean(0)
+    basis = np.linalg.svd(X - mean, full_matrices=False)[2][:n_dims]   # [n_dims, D]
+    coords = (X - mean) @ basis.T
+    lo, hi = coords.min(0) - 2, coords.max(0) + 2
+    while n < budget:
+        gp = GaussianProcessRegressor(ConstantKernel(1.0) * RBF(1.0), normalize_y=True, alpha=1e-4)
+        gp.fit(coords, np.array(y))
+        cand = rng.uniform(lo, hi, size=(pool, n_dims))
+        mu, sd = gp.predict(cand, return_std=True)
+        z = (mu - max(y)) / np.maximum(sd, 1e-9)
+        ei = (mu - max(y)) * norm.cdf(z) + sd * norm.pdf(z)
+        c = cand[int(np.argmax(ei))]
+        p, s = fold_logits(mean + c @ basis)
+        coords, y, n = np.vstack([coords, c]), y + [p], n + 1
+        observe(p, s, n)
+    return snaps
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--method", choices=["ste", "bestn"], required=True)
+    ap.add_argument("--method", choices=["ste", "bestn", "o3"], required=True)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoints", default="25,100,250", help="budgets (folds) to snapshot")
     ap.add_argument("--ligand", default="c1ccc(cc1)C(=O)O")  # benzoic acid
@@ -83,8 +142,8 @@ def main():
 
     oracle = PbindOracle(num_sampling_steps=25)   # nss>=25 for physical geometry
     feats = oracle.features_for("G" * a.binder_len, a.ligand)
-    sweep = (ste_sweep if a.method == "ste" else bestn_sweep)(
-        oracle, feats, a.binder_len, checkpoints, a.seed)
+    fn = {"ste": ste_sweep, "bestn": bestn_sweep, "o3": o3_sweep}[a.method]
+    sweep = fn(oracle, feats, a.binder_len, checkpoints, a.seed)
 
     out = Path(a.out)
     rows = json.loads(out.read_text()) if out.exists() else []
