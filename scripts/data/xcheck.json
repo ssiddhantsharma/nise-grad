@@ -1,10 +1,9 @@
 {
   "designs": {
-    "STE 0.82": {"boltz": 0.82, "protenix": 0.42},
-    "STE 0.80": {"boltz": 0.80, "protenix": 0.30},
-    "STE 0.73": {"boltz": 0.73, "protenix": 0.31},
-    "naive":    {"boltz": 0.41, "protenix": 0.25}
+    "STE 0.82": {"boltz": 0.82, "protenix": 0.42, "jopendde": 0.46},
+    "STE 0.80": {"boltz": 0.80, "protenix": 0.30, "jopendde": 0.57},
+    "naive":    {"boltz": 0.41, "protenix": 0.25, "jopendde": 0.61}
   },
-  "calibration": {"real binder": 0.98, "real scramble": 0.65, "STE best": 0.42, "STE scramble": 0.38, "naive": 0.25},
-  "note": "Boltz P(bind) = optimized oracle; Protenix-v2 ipTM = independent oracle (use_msa=false, 1 sample). Real binder = NISE's experimentally-validated apixaban binder folded under identical settings; calibrates the scale."
+  "real_binder": {"protenix": 0.98, "jopendde": 0.98},
+  "note": "Boltz P(bind) = optimized oracle. Protenix-v2 + jopendde ipTM = two independent oracles (use_msa off). Boltz-hacked designs score high on Boltz but low on both independent oracles; a real experimentally-validated binder (NISE apixaban) scores 0.98 on both. The oracles are independent enough to optimize jointly (Route B, in progress); Protenix is held out as the transfer judge."
 }

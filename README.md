@@ -9,11 +9,12 @@ P(bind). A gradient counterpart to NISE (Polizzi lab,
 https://www.nature.com/articles/s41586-026-10670-w), which does the same job with a
 gradient-free selection loop. Not a fork.
 
-**Status: a finished methods study, not a binder pipeline.** A straight-through estimator fixes
-gradient design's soft-to-discrete gap, but the designs then overfit whichever oracle they were
-optimized against (they do not transfer to an independent model), and a second *head* of the
-same model does not help. Escaping that needs a genuinely independent oracle in the loop and,
-ultimately, wet-lab validation. The reusable pieces are the STE optimizer and
+**Status: active.** A straight-through estimator fixes gradient design's soft-to-discrete gap,
+but the designs overfit whichever oracle they were optimized against, and a second *head* of the
+same model does not help. Two *independent* oracles (Protenix-v2 and jopendde) both score the
+designs far below a real binder while agreeing a real binder is 0.98 -- independent enough to
+optimize jointly. The current direction is a multi-oracle (Boltz+jopendde) objective, held out
+on Protenix; wet-lab validation is the ultimate bar. Reusable now: the STE optimizer and
 [jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
 
 ## The problem: naive gradient reward-hacks
@@ -49,21 +50,21 @@ Caveats: P(bind) is the Boltz-2 oracle, not an experiment; harder ligands are mo
 (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is ~25x slower than `nss=2`.
 Runnable: `scripts/optimize_ste.py`.
 
-## But the designs overfit the oracle
+## The designs overfit the oracle; two independent oracles agree
 STE closes the soft-to-discrete gap *within Boltz* -- it does not make real binders. Refolding
-the designs with an independent model (Protenix-v2) tells the truth:
+the designs with two independent models (Protenix-v2 and jopendde) tells the truth:
 
 ![oracle overfit](figures/oracle_overfit.png)
 
-*The STE designs score high on the optimized oracle (Boltz P(bind) 0.73-0.82) but low on
-Protenix ipTM (0.30-0.42), no better than a scramble of their own residues. A real,
-experimentally-validated binder (NISE's apixaban binder) folded under identical settings scores
-0.98, so Protenix discriminates and the low scores are real failures.* `scripts/oracle_overfit.py`.
+*The designs score high on the optimized oracle (Boltz) but far below a real binder on both
+independent oracles; a real experimentally-validated binder (NISE's apixaban binder) scores 0.98
+on both, so they discriminate and the low scores are real failures.* `scripts/oracle_overfit.py`.
 
-Optimizing a single differentiable oracle games that oracle. Adding a second *head* of the same
-model (`optimize_pbind(confidence_weight>0)` co-minimizes the Boltz interface PAE) does **not**
-help -- the design just games both heads (Protenix ipTM still 0.17-0.38). Escaping the overfit
-needs a genuinely *independent* oracle in the loop; cross-model agreement is the real bar.
+Optimizing a single oracle games it. A second *head* of the same model
+(`optimize_pbind(confidence_weight>0)`) does **not** help -- the design games both heads. But
+Boltz and jopendde *disagree* on the hacked designs while *agreeing* on a real binder, so they
+are independent enough to optimize jointly. **Current direction:** a multi-oracle
+(Boltz+jopendde) STE objective, with Protenix held out as the transfer judge.
 
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
