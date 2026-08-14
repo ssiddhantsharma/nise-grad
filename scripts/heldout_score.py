@@ -14,6 +14,8 @@ from pathlib import Path
 import jax
 from jopendde.inference import Predictor, predict, summarize
 
+AA = "ARNDCQEGHILKMFPSTWYV"
+
 
 def iptm(p, key, seq, lig):
     spec = [{"name": "x", "modelSeeds": [0], "sequences": [
@@ -24,11 +26,27 @@ def iptm(p, key, seq, lig):
     return float(summarize(inp.feat, pred, p.summary_params, n_recycle=10)[0].get("iptm", 0))
 
 
+def anchors(real_seq, ligand):
+    """Calibration rows: the real binder (true positive), a composition-matched scramble and a
+    random sequence of the same length (both true negatives), so the held-out ruler is pinned."""
+    import random
+    rng = random.Random(0)
+    scr = list(real_seq)
+    rng.shuffle(scr)
+    rand = [rng.choice(AA) for _ in real_seq]
+    return [{"method": tag, "seed": 0, "budget": 0, "ligand": ligand, "seq": s, "boltz_pbind": None}
+            for tag, s in [("anchor_real", real_seq), ("anchor_scramble", "".join(scr)),
+                           ("anchor_random", "".join(rand))]]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp", default="mb.json")
+    ap.add_argument("--anchor-real", default=None, help="real binder seq; adds calibration anchors")
     a = ap.parse_args()
     rows = json.loads(Path(a.inp).read_text())
+    if a.anchor_real:
+        rows = anchors(a.anchor_real, rows[0]["ligand"]) + rows
     p = Predictor.from_checkpoint()
     key = jax.random.key(0)
 
@@ -38,8 +56,10 @@ def main():
         row["jopendde_iptm"] = ip
         by.setdefault((row["method"], row["budget"]), []).append(ip)
         Path(a.inp).write_text(json.dumps(rows, indent=2))
-        print(f"HELDOUT {row['method']:<6} seed {row['seed']} budget {row['budget']:3d}  "
-              f"boltz {row['boltz_pbind']:.2f}  jopendde_iptm {ip:.2f}  {row['seq']}", flush=True)
+        bp = row["boltz_pbind"]
+        bp_s = f"{bp:.2f}" if isinstance(bp, (int, float)) else " n/a"
+        print(f"HELDOUT {row['method']:<9} seed {row['seed']} budget {row['budget']:3d}  "
+              f"boltz {bp_s}  jopendde_iptm {ip:.2f}  {row['seq']}", flush=True)
     print("---")
     for (m, b) in sorted(by):
         xs = by[(m, b)]
