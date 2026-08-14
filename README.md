@@ -75,7 +75,10 @@ an oracle it never saw? (`scripts/matched_budget.py`, `scripts/heldout_score.py`
 
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`
-- `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
+- `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE + ligand-aware MPNN terms)
+- `src/nisegrad/ligand_mpnn_reg.py`, `boltz_ligand.py` ligand-aware LigandMPNN
+  ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) regularizer, tested as the
+  counter to affinity-head reward-hacking (does it raise the held-out score, not just lower Boltz?)
 - `scripts/` STE run, matched-budget sweep, figures
 
 ## Install
