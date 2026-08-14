@@ -53,8 +53,10 @@ Protenix ipTM (0.30-0.42), no better than a scramble of their own residues. A re
 experimentally-validated binder (NISE's apixaban binder) folded under identical settings scores
 0.98, so Protenix discriminates and the low scores are real failures.* `scripts/oracle_overfit.py`.
 
-Optimizing a single differentiable oracle games that oracle. Cross-model agreement, or
-multi-oracle optimization, is the real bar.
+Optimizing a single differentiable oracle games that oracle. Adding a second *head* of the same
+model (`optimize_pbind(confidence_weight>0)` co-minimizes the Boltz interface PAE) does **not**
+help -- the design just games both heads (Protenix ipTM still 0.17-0.38). Escaping the overfit
+needs a genuinely *independent* oracle in the loop; cross-model agreement is the real bar.
 
 ## Optional: ligand-aware prior
 `src/nisegrad/ligand_mpnn_reg.py` adds a LigandMPNN
