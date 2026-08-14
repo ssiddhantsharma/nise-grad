@@ -37,9 +37,19 @@ def _run(loss_fn, binder_len, *, steps, lr, seed, label):
     return logits, trajectory
 
 
+def interface_pae(output):
+    """Mean predicted aligned error between the binder chain and the ligand (lower = more
+    confident interface). A second, structure-based Boltz head, differentiable in the sequence."""
+    asym = output.asym_id
+    binder = (asym == asym[0]).astype(output.pae.dtype)   # first chain is the binder
+    ligand = 1.0 - binder
+    w = binder[:, None] * ligand[None, :]                  # binder -> ligand token pairs
+    return (output.pae * w).sum() / jnp.maximum(w.sum(), 1.0)
+
+
 def optimize_pbind(oracle, features, binder_len, *, mpnn=None, mpnn_weight=1.0,
                    steps=40, lr=0.05, seed=0, key_seed=0, recycling_steps=0,
-                   straight_through=False):
+                   straight_through=False, confidence_weight=0.0):
     """Ascend P(bind), optionally regularized by an MPNN sequence log-likelihood so the
     binder stays protein-like. Returns (final_logits, per-step P(bind) logits).
 
@@ -48,7 +58,10 @@ def optimize_pbind(oracle, features, binder_len, *, mpnn=None, mpnn_weight=1.0,
 
     straight_through=True feeds the oracle the DISCRETE argmax sequence in the forward pass
     (so the reported P(bind) is the real discrete number, not the soft optimum) while passing
-    the gradient through the soft distribution -- optimizes the discrete objective directly."""
+    the gradient through the soft distribution -- optimizes the discrete objective directly.
+
+    confidence_weight>0 also minimizes the binder-ligand interface PAE (a second Boltz head),
+    so the design must form a confident predicted interface, not just fool the affinity head."""
     key = jax.random.PRNGKey(key_seed)
 
     def loss_fn(logits):
@@ -60,6 +73,8 @@ def optimize_pbind(oracle, features, binder_len, *, mpnn=None, mpnn_weight=1.0,
         pbind, output = oracle.pbind_and_output(
             seq, features, key, recycling_steps=recycling_steps)
         loss = -pbind
+        if confidence_weight:
+            loss = loss + confidence_weight * interface_pae(output)
         if mpnn is not None:
             mpnn_nll, _ = mpnn(seq, output, key)   # negative log-likelihood
             loss = loss + mpnn_weight * mpnn_nll
