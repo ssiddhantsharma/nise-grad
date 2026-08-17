@@ -117,6 +117,8 @@ layer, not the pocket generator.
 - `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
 - `scripts/matched_budget.py` generate designs (STE / Best-K-of-N / O3) at a fold budget
 - `scripts/protenix_score.py` held-out Protenix-2 judge (iptm, ligand ipTM, gpde, ranking)
+- `scripts/project.py` late-projection onto the foldable manifold (LigandMPNN `score_soft`,
+  via `src/nisegrad/boltz_ligand.py` + `ligand_mpnn_reg.py`)
 - `scripts/*_figure.py` the figures; `scripts/data/` the scored experiment logs
 - `scripts/optimize_ste.py` a single STE run
 
