@@ -24,20 +24,25 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
-from nisegrad.optimize import AA_ORDER, decode, sigmoid
+from nisegrad.optimize import AA_ORDER, decode, interface_pae, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
-def ste_sweep(oracle, feats, binder_len, checkpoints, seed):
-    """STE (identical to optimize_pbind) to max(checkpoints) steps; snapshot the design at each."""
+def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0):
+    """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each.
+    confidence_weight>0 adds the binder-ligand interface PAE (a second Boltz head), so the
+    design must form a confident predicted interface, not just fool the affinity head."""
     key = jax.random.PRNGKey(0)
 
     def loss_fn(logits):
         soft = jax.nn.softmax(logits, -1)
         hard = jax.nn.one_hot(jnp.argmax(soft, -1), 20)
         seq = soft + jax.lax.stop_gradient(hard - soft)   # forward=hard, backward=soft
-        pbind, _ = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
-        return -pbind, pbind
+        pbind, output = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
+        loss = -pbind
+        if confidence_weight:
+            loss = loss + confidence_weight * interface_pae(output)
+        return loss, pbind
 
     logits = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
     opt = optax.adam(0.1)
@@ -136,21 +141,28 @@ def main():
     ap.add_argument("--checkpoints", default="25,100,250", help="budgets (folds) to snapshot")
     ap.add_argument("--ligand", default="c1ccc(cc1)C(=O)O")  # benzoic acid
     ap.add_argument("--binder-len", type=int, default=30)
+    ap.add_argument("--confidence-weight", type=float, default=0.0,
+                    help="ste only: weight of the interface-PAE confidence term (0 = plain STE)")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
 
     oracle = PbindOracle(num_sampling_steps=25)   # nss>=25 for physical geometry
     feats = oracle.features_for("G" * a.binder_len, a.ligand)
-    fn = {"ste": ste_sweep, "bestn": bestn_sweep, "o3": o3_sweep}[a.method]
-    sweep = fn(oracle, feats, a.binder_len, checkpoints, a.seed)
+    if a.method == "ste":
+        sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
+                          confidence_weight=a.confidence_weight)
+    else:
+        sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
+            oracle, feats, a.binder_len, checkpoints, a.seed)
 
+    label = a.method if a.confidence_weight == 0 else f"ste_c{a.confidence_weight:g}"
     out = Path(a.out)
     rows = json.loads(out.read_text()) if out.exists() else []
     for budget, (seq, pbind) in sweep.items():
-        rows.append({"method": a.method, "seed": a.seed, "budget": budget,
+        rows.append({"method": label, "seed": a.seed, "budget": budget,
                      "ligand": a.ligand, "seq": seq, "boltz_pbind": pbind})
-        print(f"WROTE {a.method:<6} seed {a.seed} budget {budget:3d}  P(bind)={pbind:.2f}  {seq}",
+        print(f"WROTE {label:<8} seed {a.seed} budget {budget:3d}  P(bind)={pbind:.2f}  {seq}",
               flush=True)
     out.write_text(json.dumps(rows, indent=2))
 
