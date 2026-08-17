@@ -23,18 +23,23 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
+from mosaic.losses.structure_prediction import BinderTargetContact
 
 from nisegrad.optimize import AA_ORDER, decode, interface_pae, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
-def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None):
+def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None,
+              contact_weight=0.0):
     """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each.
     confidence_weight>0 adds the binder-ligand interface PAE (a second Boltz head), so the
     design must form a confident predicted interface, not just fool the affinity head.
+    contact_weight>0 adds mosaic's BinderTargetContact on the Boltz distogram (binder residue ->
+    ligand atom, <8A), which explicitly forces a real interface rather than a gamed affinity head.
     init_seq (a real scaffold sequence) biases the starting logits so STE refines a real fold
     rather than hallucinating from noise; per-seed noise still varies the trajectory."""
     key = jax.random.PRNGKey(0)
+    contact = BinderTargetContact(contact_distance=8.0) if contact_weight else None
 
     def loss_fn(logits):
         soft = jax.nn.softmax(logits, -1)
@@ -44,6 +49,8 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
         loss = -pbind
         if confidence_weight:
             loss = loss + confidence_weight * interface_pae(output)
+        if contact_weight:
+            loss = loss + contact_weight * contact(seq, output, key)[0]
         return loss, pbind
 
     noise = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
@@ -154,6 +161,8 @@ def main():
                     help="ste only: weight of the interface-PAE confidence term (0 = plain STE)")
     ap.add_argument("--init-seq", default=None,
                     help="ste only: real scaffold sequence to initialize from (else random)")
+    ap.add_argument("--contact-weight", type=float, default=0.0,
+                    help="ste only: weight of mosaic BinderTargetContact (distogram, 0 = off)")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
@@ -162,7 +171,8 @@ def main():
     feats = oracle.features_for("G" * a.binder_len, a.ligand)
     if a.method == "ste":
         sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
-                          confidence_weight=a.confidence_weight, init_seq=a.init_seq)
+                          confidence_weight=a.confidence_weight, init_seq=a.init_seq,
+                          contact_weight=a.contact_weight)
     else:
         sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
             oracle, feats, a.binder_len, checkpoints, a.seed)
@@ -170,6 +180,8 @@ def main():
     label = a.method
     if a.init_seq:
         label = "ste_scaf"
+    elif a.contact_weight:
+        label = f"ste_ct{a.contact_weight:g}"
     elif a.confidence_weight:
         label = f"ste_c{a.confidence_weight:g}"
     out = Path(a.out)
