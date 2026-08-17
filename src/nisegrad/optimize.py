@@ -31,8 +31,7 @@ def interface_pae(output):
 
 
 def optimize_pbind(oracle, features, binder_len, *, steps=40, lr=0.05, seed=0, key_seed=0,
-                   recycling_steps=0, straight_through=False, confidence_weight=0.0,
-                   mpnn=None, mpnn_weight=1.0):
+                   recycling_steps=0, straight_through=False, confidence_weight=0.0):
     """Ascend P(bind). Returns (final_logits, per-step P(bind) logits).
 
     recycling_steps>0 folds a physical structure each step (slower, more memory), so P(bind)
@@ -43,11 +42,7 @@ def optimize_pbind(oracle, features, binder_len, *, steps=40, lr=0.05, seed=0, k
     the gradient through the soft distribution -- optimizes the discrete objective directly.
 
     confidence_weight>0 also minimizes the binder-ligand interface PAE (a second Boltz head),
-    so the design must form a confident predicted interface, not just fool the affinity head.
-
-    mpnn is a ligand-aware inverse-folding regularizer (LigandMPNN NLL of the soft sequence
-    given the predicted backbone + ligand); mpnn_weight>0 penalizes sequences the structure
-    would not encode -- the intended counter to the affinity head's reward-hacking."""
+    so the design must form a confident predicted interface, not just fool the affinity head."""
     key = jax.random.PRNGKey(key_seed)
 
     def loss_fn(logits):
@@ -61,9 +56,6 @@ def optimize_pbind(oracle, features, binder_len, *, steps=40, lr=0.05, seed=0, k
         loss = -pbind
         if confidence_weight:
             loss = loss + confidence_weight * interface_pae(output)
-        if mpnn is not None:
-            mpnn_nll, _ = mpnn(seq, output, key)
-            loss = loss + mpnn_weight * mpnn_nll
         return loss, pbind
 
     logits = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))

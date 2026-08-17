@@ -1,0 +1,85 @@
+"""Re-score designs on Protenix-v2 (a second, independent held-out oracle).
+
+Question: does Protenix discriminate real binding from scramble/random/poly-Q better than
+jopendde ipTM did? Two modes:
+  build  designs JSON -> a Protenix `pred` input JSON (proteinChain + ligand SMILES)
+  parse  Protenix output dir -> iptm, ligand-specific ipTM (binder-ligand chain pair),
+         gpde (lower better), ranking_score, written back into the designs JSON + a report.
+"""
+
+import argparse
+import json
+from collections import defaultdict
+from pathlib import Path
+
+
+def build(rows, out):
+    entries = [{"name": f"d{i}", "sequences": [
+        {"proteinChain": {"sequence": r["seq"], "count": 1, "id": ["A"]}},
+        {"ligand": {"ligand": r["ligand"], "count": 1, "id": ["B"]}}]}
+        for i, r in enumerate(rows)]
+    Path(out).write_text(json.dumps(entries, indent=2))
+    print(f"built {len(entries)} Protenix entries -> {out}", flush=True)
+
+
+def _mean(xs):
+    xs = [x for x in xs if x is not None]
+    return sum(xs) / len(xs) if xs else None
+
+
+def parse(rows, outdir, seed):
+    for i, r in enumerate(rows):
+        # protenix writes N diffusion samples per seed; average across them
+        hits = sorted(Path(outdir).glob(
+            f"d{i}/seed_{seed}/predictions/d{i}_summary_confidence_sample_*.json"))
+        if not hits:
+            r["protenix_iptm"] = None
+            print(f"  MISSING d{i}", flush=True)
+            continue
+        cs = [json.loads(h.read_text()) for h in hits]
+        r["protenix_iptm"] = _mean([c.get("iptm") for c in cs])
+        r["protenix_lig_iptm"] = _mean(
+            [c["chain_pair_iptm"][0][1] for c in cs
+             if c.get("chain_pair_iptm") and len(c["chain_pair_iptm"]) > 1])
+        r["protenix_gpde"] = _mean([c.get("gpde") for c in cs])
+        r["protenix_ranking"] = _mean([c.get("ranking_score") for c in cs])
+
+    def key(r):
+        m = r["method"]
+        return m if m.startswith("anchor") else f"{m}@{r['budget']}"
+    agg = defaultdict(lambda: defaultdict(list))
+    for r in rows:
+        if r.get("protenix_iptm") is None:
+            continue
+        for k in ("protenix_iptm", "protenix_lig_iptm", "protenix_gpde", "protenix_ranking"):
+            if r.get(k) is not None:
+                agg[key(r)][k].append(r[k])
+    print("\n== Protenix-v2 held-out (mean per group) ==", flush=True)
+    print(f"{'group':<20} {'iptm':>6} {'lig_iptm':>9} {'gpde':>6} {'rank':>6}  n", flush=True)
+    for g in sorted(agg):
+        a = agg[g]
+        def m(k):
+            return f"{sum(a[k]) / len(a[k]):.2f}" if a.get(k) else "  -"
+        n = len(a.get("protenix_iptm", []))
+        print(f"{g:<20} {m('protenix_iptm'):>6} {m('protenix_lig_iptm'):>9} "
+              f"{m('protenix_gpde'):>6} {m('protenix_ranking'):>6}  {n}", flush=True)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("mode", choices=["build", "parse"])
+    ap.add_argument("--in", dest="inp", required=True)
+    ap.add_argument("--input-json", default="/tmp/protenix_in.json")
+    ap.add_argument("--outdir", default="/tmp/protenix_out")
+    ap.add_argument("--seed", default="101")
+    a = ap.parse_args()
+    rows = json.loads(Path(a.inp).read_text())
+    if a.mode == "build":
+        build(rows, a.input_json)
+    else:
+        parse(rows, a.outdir, a.seed)
+        Path(a.inp).write_text(json.dumps(rows, indent=2))
+
+
+if __name__ == "__main__":
+    main()

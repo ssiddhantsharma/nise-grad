@@ -1,7 +1,7 @@
 """Straight-through gradient design: a real discrete binder in ~25 steps.
 
 The reported P(bind) is the discrete design's (forward pass folds the argmax sequence), so the
-trajectory is honest. No LigandMPNN reference needed. Env: NISEGRAD_BOLTZ_CACHE.
+trajectory is honest. Env: NISEGRAD_BOLTZ_CACHE.
 """
 
 from nisegrad.optimize import decode, optimize_pbind, sigmoid

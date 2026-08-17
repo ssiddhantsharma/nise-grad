@@ -4,7 +4,7 @@ At a budget of B Boltz folds, STE takes B gradient steps; Best-K-of-N folds B ra
 (from STE's own init distribution) and keeps the best. Because STE's trajectory passes through
 every step and Best-K-of-N's best-so-far only improves, ONE run to max(checkpoints) yields the
 design at every checkpoint, so a single process per (method, seed) sweeps all budgets. Winners
-are scored later on a held-out oracle (heldout_score.py); the transfer edge vs budget is the point.
+are scored later on a held-out oracle (protenix_score.py); the transfer edge vs budget is the point.
 
 Methods: ste (gradient), bestn (Best-K-of-N sampling), o3 (latent Bayesian optimization, an
 adapted Kalisz et al. 2026 baseline). One run per process (a second optimize/jit in the same
@@ -17,7 +17,6 @@ process leaks a JAX tracer):
 
 import argparse
 import json
-import os
 from pathlib import Path
 
 import jax
@@ -29,37 +28,16 @@ from nisegrad.optimize import AA_ORDER, decode, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
-def load_ligandmpnn(ckpt, ref_dir):
-    """Load a LigandMPNN checkpoint into jligandmpnn (JAX) via the reference torch module."""
-    import sys
-
-    import torch
-    sys.path.insert(0, ref_dir)
-    import ligmpnn_model as ref
-    from jligandmpnn.model import LigandMPNN
-    ck = torch.load(ckpt, map_location="cpu", weights_only=False)
-    m = ref.ProteinMPNN(model_type="ligand_mpnn", k_neighbors=ck["num_edges"],
-                        atom_context_num=ck["atom_context_num"])
-    m.load_state_dict(ck["model_state_dict"])
-    m.eval()
-    return LigandMPNN.from_torch(m)
-
-
-def ste_sweep(oracle, feats, binder_len, checkpoints, seed, reg=None, mpnn_weight=0.0):
-    """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each. reg is
-    an optional ligand-aware LigandMPNN regularizer (NLL of the soft sequence given the live
-    predicted structure), added at mpnn_weight to counter the affinity head's reward-hacking."""
+def ste_sweep(oracle, feats, binder_len, checkpoints, seed):
+    """STE (identical to optimize_pbind) to max(checkpoints) steps; snapshot the design at each."""
     key = jax.random.PRNGKey(0)
 
     def loss_fn(logits):
         soft = jax.nn.softmax(logits, -1)
         hard = jax.nn.one_hot(jnp.argmax(soft, -1), 20)
         seq = soft + jax.lax.stop_gradient(hard - soft)   # forward=hard, backward=soft
-        pbind, output = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
-        loss = -pbind
-        if reg is not None:
-            loss = loss + mpnn_weight * reg(seq, output, key)[0]
-        return loss, pbind
+        pbind, _ = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
+        return -pbind, pbind
 
     logits = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
     opt = optax.adam(0.1)
@@ -158,36 +136,21 @@ def main():
     ap.add_argument("--checkpoints", default="25,100,250", help="budgets (folds) to snapshot")
     ap.add_argument("--ligand", default="c1ccc(cc1)C(=O)O")  # benzoic acid
     ap.add_argument("--binder-len", type=int, default=30)
-    ap.add_argument("--mpnn-weight", type=float, default=0.0,
-                    help="ste only: weight of the LigandMPNN prior (env LIGANDMPNN_CKPT, "
-                         "LIGMPNN_MODEL_DIR); 0 = plain STE")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
 
     oracle = PbindOracle(num_sampling_steps=25)   # nss>=25 for physical geometry
     feats = oracle.features_for("G" * a.binder_len, a.ligand)
+    fn = {"ste": ste_sweep, "bestn": bestn_sweep, "o3": o3_sweep}[a.method]
+    sweep = fn(oracle, feats, a.binder_len, checkpoints, a.seed)
 
-    if a.method == "ste":
-        reg = None
-        if a.mpnn_weight > 0:
-            from nisegrad.boltz_ligand import build_boltz_regularizer
-            model = load_ligandmpnn(os.environ["LIGANDMPNN_CKPT"],
-                                    os.environ["LIGMPNN_MODEL_DIR"])
-            reg = build_boltz_regularizer(model, feats, frozen_output=None)
-        sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
-                          reg=reg, mpnn_weight=a.mpnn_weight)
-    else:
-        sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
-            oracle, feats, a.binder_len, checkpoints, a.seed)
-
-    label = a.method if a.mpnn_weight == 0 else f"ste_w{a.mpnn_weight:g}"
     out = Path(a.out)
     rows = json.loads(out.read_text()) if out.exists() else []
     for budget, (seq, pbind) in sweep.items():
-        rows.append({"method": label, "seed": a.seed, "budget": budget,
+        rows.append({"method": a.method, "seed": a.seed, "budget": budget,
                      "ligand": a.ligand, "seq": seq, "boltz_pbind": pbind})
-        print(f"WROTE {label:<8} seed {a.seed} budget {budget:3d}  P(bind)={pbind:.2f}  {seq}",
+        print(f"WROTE {a.method:<6} seed {a.seed} budget {budget:3d}  P(bind)={pbind:.2f}  {seq}",
               flush=True)
     out.write_text(json.dumps(rows, indent=2))
 

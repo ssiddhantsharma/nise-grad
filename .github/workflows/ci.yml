@@ -1,5 +1,5 @@
 name: ci
-# Lint + the pure-logic unit tests. The design runs (Boltz-2 + LigandMPNN forward) need a
+# Lint + the pure-logic unit tests. The design runs (Boltz-2 forward) need a
 # GPU and checkpoints, so they are not run in CI.
 on: [push, pull_request]
 

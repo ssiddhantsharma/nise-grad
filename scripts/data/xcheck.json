@@ -1,9 +1,0 @@
-{
-  "designs": {
-    "STE 0.82": {"boltz": 0.82, "protenix": 0.42, "jopendde": 0.46},
-    "STE 0.80": {"boltz": 0.80, "protenix": 0.30, "jopendde": 0.57},
-    "naive":    {"boltz": 0.41, "protenix": 0.25, "jopendde": 0.61}
-  },
-  "real_binder": {"protenix": 0.98, "jopendde": 0.98},
-  "note": "Boltz P(bind) = optimized oracle. Protenix-v2 + jopendde ipTM = two independent oracles (use_msa off). Boltz-hacked designs score high on Boltz but low on both independent oracles; a real experimentally-validated binder (NISE apixaban) scores 0.98 on both. The oracles are independent enough to optimize jointly (Route B, in progress); Protenix is held out as the transfer judge."
-}

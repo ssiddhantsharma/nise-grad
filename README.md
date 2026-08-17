@@ -14,12 +14,13 @@ biological oracles are non-differentiable. Ours is differentiable only because t
 *model*, which is both why it is cheap and why it overfits.
 
 **Status: active.** A straight-through estimator fixes gradient design's soft-to-discrete gap,
-but the designs overfit whichever oracle they were optimized against, and a second *head* of the
-same model does not help. Two *independent* oracles (Protenix-v2 and jopendde) both score the
-designs far below a real binder while agreeing a real binder is 0.98 -- independent enough to
-optimize jointly. The current direction is a multi-oracle (Boltz+jopendde) objective, held out
-on Protenix; wet-lab validation is the ultimate bar. Reusable now: the STE optimizer and
-[jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
+but a fully optimized design overfits the Boltz oracle (poly-Q sequences reach Boltz P(bind)
+~0.9 while being nonsense). The fix is not to trust the optimized oracle but to *filter* on an
+independent held-out judge, **Protenix-v2**, validated by anchors: NISE's real apixaban binder
+scores iptm 0.98 / gpde 0.30, while scrambled and random sequences sit at ~0.25 / gpde ~2.5, so
+the ruler discriminates. On it the raw designs are weak, but STE at *low* budget plus Protenix
+filtering surfaces candidates approaching the real binder (best so far iptm 0.84 / gpde 0.49).
+Direction: **Boltz-optimize, then Protenix-filter**; wet-lab validation is the ultimate bar.
 
 ## The problem: naive gradient reward-hacks
 Optimizing the *soft* (continuous) sequence maximizes a fiction. Its optimum sits between real
@@ -54,32 +55,28 @@ Caveats: P(bind) is the Boltz-2 oracle, not an experiment; harder ligands are mo
 (sulfonamide 0.44-0.66 vs benzoic acid 0.62-0.73); `nss>=25` is ~25x slower than `nss=2`.
 Runnable: `scripts/optimize_ste.py`.
 
-## The designs overfit the oracle; two independent oracles agree
-STE closes the soft-to-discrete gap *within Boltz* -- it does not make real binders. Refolding
-the designs with two independent models (Protenix-v2 and jopendde) tells the truth:
+## The designs overfit the oracle; use a held-out judge to filter
+STE closes the soft-to-discrete gap *within Boltz* -- it does not by itself make real binders
+(a fully optimized design is poly-Q at Boltz ~0.9). A model optimized against its own head
+overfits by construction, so trusting the optimized oracle is a mistake; the honest move is to
+refold every design on an *independent* model, **Protenix-v2**, and keep only what survives.
 
-![oracle overfit](figures/oracle_overfit.png)
-
-*The designs score high on the optimized oracle (Boltz) but far below a real binder on both
-independent oracles; a real experimentally-validated binder (NISE's apixaban binder) scores 0.98
-on both, so they discriminate and the low scores are real failures.* `scripts/oracle_overfit.py`.
-
-Optimizing a single oracle games it. A second *head* of the same model
-(`optimize_pbind(confidence_weight>0)`) does **not** help -- the design games both heads. But
-Boltz and jopendde *disagree* on the hacked designs while *agreeing* on a real binder, so they
-are independent enough to optimize jointly. **Current direction:** a multi-oracle
-(Boltz+jopendde) STE objective, with Protenix held out as the transfer judge. A model optimized
-against its own head overfits by construction, so the honest test is a *matched oracle budget*
-scored on a held-out oracle: at equal folds, does gradient guidance beat Best-K-of-N sampling on
-an oracle it never saw? (`scripts/matched_budget.py`, `scripts/heldout_score.py`).
+The held-out metric matters: a generic interface score (ipTM) is too compressed to filter on
+(random sequences score ~0.7). Protenix's `gpde` and `ranking_score` separate real from nonsense
+far better -- anchor-validated: NISE's real apixaban binder scores iptm 0.98 / gpde 0.30, while
+scrambled and random sequences sit at ~0.25 / gpde ~2.5. Generate many STE designs at low budget,
+score them on Protenix (`scripts/protenix_score.py`), and filter on iptm and gpde. The best
+candidates reach iptm 0.84 / gpde 0.49, approaching the real binder; the raw per-design mean is
+still weak, so this is a *filtered generator*, not a per-design guarantee. A second Boltz head
+(`optimize_pbind(confidence_weight>0)`) does **not** help -- the design games both heads.
+Generate with `scripts/matched_budget.py` (STE / Best-K-of-N / O3 at a fold budget).
 
 ## Layout
-- `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`
-- `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE + ligand-aware MPNN terms)
-- `src/nisegrad/ligand_mpnn_reg.py`, `boltz_ligand.py` ligand-aware LigandMPNN
-  ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)) regularizer, tested as the
-  counter to affinity-head reward-hacking (does it raise the held-out score, not just lower Boltz?)
-- `scripts/` STE run, matched-budget sweep, figures
+- `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)` -- the in-loop optimizer
+- `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
+- `scripts/matched_budget.py` generate designs (STE / Best-K-of-N / O3) at a fold budget
+- `scripts/protenix_score.py` held-out Protenix-v2 judge (iptm, ligand ipTM, gpde, ranking)
+- `scripts/optimize_ste.py` single STE run; `scripts/gradient_reality.py` the STE figure
 
 ## Install
 ```
