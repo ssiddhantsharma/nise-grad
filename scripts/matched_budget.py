@@ -28,10 +28,12 @@ from nisegrad.optimize import AA_ORDER, decode, interface_pae, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
-def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0):
+def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None):
     """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each.
     confidence_weight>0 adds the binder-ligand interface PAE (a second Boltz head), so the
-    design must form a confident predicted interface, not just fool the affinity head."""
+    design must form a confident predicted interface, not just fool the affinity head.
+    init_seq (a real scaffold sequence) biases the starting logits so STE refines a real fold
+    rather than hallucinating from noise; per-seed noise still varies the trajectory."""
     key = jax.random.PRNGKey(0)
 
     def loss_fn(logits):
@@ -44,7 +46,14 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
             loss = loss + confidence_weight * interface_pae(output)
         return loss, pbind
 
-    logits = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
+    noise = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
+    if init_seq is not None:
+        assert len(init_seq) == binder_len, f"init_seq len {len(init_seq)} != binder_len {binder_len}"
+        idx = jnp.asarray([AA_ORDER.index(c) for c in init_seq])
+        # bias 2.0: argmax starts at the scaffold, but 25 Adam steps can still flip key positions
+        logits = 2.0 * jax.nn.one_hot(idx, 20) + noise
+    else:
+        logits = noise
     opt = optax.adam(0.1)
     state = opt.init(logits)
     step_fn = jax.jit(jax.value_and_grad(loss_fn, has_aux=True))
@@ -143,6 +152,8 @@ def main():
     ap.add_argument("--binder-len", type=int, default=30)
     ap.add_argument("--confidence-weight", type=float, default=0.0,
                     help="ste only: weight of the interface-PAE confidence term (0 = plain STE)")
+    ap.add_argument("--init-seq", default=None,
+                    help="ste only: real scaffold sequence to initialize from (else random)")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
@@ -151,12 +162,16 @@ def main():
     feats = oracle.features_for("G" * a.binder_len, a.ligand)
     if a.method == "ste":
         sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
-                          confidence_weight=a.confidence_weight)
+                          confidence_weight=a.confidence_weight, init_seq=a.init_seq)
     else:
         sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
             oracle, feats, a.binder_len, checkpoints, a.seed)
 
-    label = a.method if a.confidence_weight == 0 else f"ste_c{a.confidence_weight:g}"
+    label = a.method
+    if a.init_seq:
+        label = "ste_scaf"
+    elif a.confidence_weight:
+        label = f"ste_c{a.confidence_weight:g}"
     out = Path(a.out)
     rows = json.loads(out.read_text()) if out.exists() else []
     for budget, (seq, pbind) in sweep.items():
