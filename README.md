@@ -22,6 +22,45 @@ the ruler discriminates. On it the raw designs are weak, but STE at *low* budget
 filtering surfaces candidates approaching the real binder (best so far iptm 0.84 / gpde 0.49).
 Direction: **Boltz-optimize, then Protenix-filter**; wet-lab validation is the ultimate bar.
 
+## Method
+A binder sequence over the 20-residue simplex is optimized by gradient ascent through a
+differentiable Boltz-2 oracle, then screened on an independent held-out model (Protenix-2).
+
+**Objective.** For a soft sequence `m` folded with the fixed ligand, minimize
+
+```
+L(m) = -P_bind(m)  +  w_c · L_contact(m)  +  w_pae · L_conf(m)              (1)
+
+  P_bind     Boltz-2 affinity binder/non-binder logit                  maximize    (2)
+  L_contact  mosaic BinderTargetContact on the Boltz distogram:
+             -log P(binder residue -> ligand atom < 8 A), top-3/residue  interface (3)
+  L_conf     mean binder<->ligand interface PAE                          confident (4)
+```
+
+**Algorithm** (straight-through gradient design)
+
+```
+Input:  ligand, binder length N, budget K, weights (w_c, w_pae), optional scaffold s
+Init:   x <- bias·one_hot(s) + noise   if scaffold   else   noise         # logits [N,20]
+for k = 1 .. K:
+    soft <- softmax(x)
+    hard <- one_hot(argmax(soft))
+    seq  <- soft + stop_grad(hard - soft)              # forward=hard, backward=soft
+    pbind, out <- Boltz2(seq, ligand; recycling=3)     # fold the discrete design
+    L    <- -pbind + w_c·contact(out) + w_pae·conf(out)          # eq. (1)
+    x    <- Adam(x, dL/dx)
+return argmax(x)                                       # a discrete binder sequence
+```
+
+**Pipeline**
+
+```
+init (random | NISE pocket scaffold) -> STE-optimize L -> [project: LigandMPNN] -> Protenix-2 filter
+```
+
+`scripts/matched_budget.py` runs the optimizer (STE / Best-K-of-N / O3; `--contact-weight`,
+`--confidence-weight`, `--init-seq`); `scripts/protenix_score.py` is the held-out filter.
+
 ## The problem: naive gradient reward-hacks
 Optimizing the *soft* (continuous) sequence maximizes a fiction. Its optimum sits between real
 amino acids, so the soft P(bind) climbs to ~0.8, but the discrete argmax sequence, refolded,
