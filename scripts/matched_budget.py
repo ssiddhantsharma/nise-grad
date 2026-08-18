@@ -25,19 +25,21 @@ import numpy as np
 import optax
 from mosaic.losses.structure_prediction import BinderTargetContact
 
-from nisegrad.optimize import AA_ORDER, decode, interface_pae, sigmoid
+from nisegrad.optimize import AA_ORDER, decode, interface_pae, ptm_energy, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
 def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None,
-              contact_weight=0.0):
+              contact_weight=0.0, ptm_energy_obj=False):
     """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each.
     confidence_weight>0 adds the binder-ligand interface PAE (a second Boltz head), so the
     design must form a confident predicted interface, not just fool the affinity head.
     contact_weight>0 adds mosaic's BinderTargetContact on the Boltz distogram (binder residue ->
     ligand atom, <8A), which explicitly forces a real interface rather than a gamed affinity head.
-    init_seq (a real scaffold sequence) biases the starting logits so STE refines a real fold
-    rather than hallucinating from noise; per-seed noise still varies the trajectory."""
+    ptm_energy_obj replaces the affinity head with pTMEnergy (BindEnergyCraft, Eq 8): a dense,
+    LogSumExp interface energy over the pAE logits that resists the reward-hacking of the max-based
+    affinity head. init_seq (a real scaffold sequence) biases the starting logits so STE refines a
+    real fold rather than hallucinating from noise; per-seed noise still varies the trajectory."""
     key = jax.random.PRNGKey(0)
     contact = BinderTargetContact(contact_distance=8.0) if contact_weight else None
 
@@ -46,7 +48,7 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
         hard = jax.nn.one_hot(jnp.argmax(soft, -1), 20)
         seq = soft + jax.lax.stop_gradient(hard - soft)   # forward=hard, backward=soft
         pbind, output = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
-        loss = -pbind
+        loss = ptm_energy(output) if ptm_energy_obj else -pbind
         if confidence_weight:
             loss = loss + confidence_weight * interface_pae(output)
         if contact_weight:
@@ -163,6 +165,8 @@ def main():
                     help="ste only: real scaffold sequence to initialize from (else random)")
     ap.add_argument("--contact-weight", type=float, default=0.0,
                     help="ste only: weight of mosaic BinderTargetContact (distogram, 0 = off)")
+    ap.add_argument("--ptm-energy", action="store_true",
+                    help="ste only: optimize pTMEnergy (BindEnergyCraft) instead of the affinity head")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
@@ -172,13 +176,15 @@ def main():
     if a.method == "ste":
         sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
                           confidence_weight=a.confidence_weight, init_seq=a.init_seq,
-                          contact_weight=a.contact_weight)
+                          contact_weight=a.contact_weight, ptm_energy_obj=a.ptm_energy)
     else:
         sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
             oracle, feats, a.binder_len, checkpoints, a.seed)
 
     label = a.method
-    if a.init_seq:
+    if a.ptm_energy:
+        label = "ste_ptm"
+    elif a.init_seq:
         label = "ste_scaf"
     elif a.contact_weight:
         label = f"ste_ct{a.contact_weight:g}"

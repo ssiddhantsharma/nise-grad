@@ -30,6 +30,21 @@ def interface_pae(output):
     return (output.pae * w).sum() / jnp.maximum(w.sum(), 1.0)
 
 
+def ptm_energy(output):
+    """pTMEnergy (Nori et al. 2025, BindEnergyCraft, Eq 8). Reinterpret the pAE logits as an
+    energy via LogSumExp over distance bins (the JEM trick), weighted by the pTM kernel g(d) and
+    averaged over inter-chain (binder-ligand) pairs. Unlike the max-based affinity/ipTM head this
+    gives dense gradients across the whole interface, so it resists reward-hacking. Lower better."""
+    logits = output.pae_logits                             # [N, N, Bins]
+    n = logits.shape[0]
+    d0 = jnp.maximum(1.24 * (n - 15) ** (1.0 / 3.0) - 1.8, 1e-3)
+    log_g = jnp.log(1.0 / (1.0 + (output.pae_bins / d0) ** 2))            # log g(d_b), [Bins]
+    e = -jax.nn.logsumexp(logits + log_g[None, None, :], axis=-1)         # E_ij = -log Σ g·e^ℓ
+    asym = output.asym_id
+    inter = (asym[:, None] != asym[None, :]).astype(e.dtype)              # inter-chain pairs
+    return (e * inter).sum() / jnp.maximum(inter.sum(), 1.0)
+
+
 def optimize_pbind(oracle, features, binder_len, *, steps=40, lr=0.05, seed=0, key_seed=0,
                    recycling_steps=0, straight_through=False, confidence_weight=0.0):
     """Ascend P(bind). Returns (final_logits, per-step P(bind) logits).
