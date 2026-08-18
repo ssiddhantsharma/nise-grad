@@ -34,6 +34,19 @@ def foldability(output):
     return 1.0 - output.plddt.mean()
 
 
+def usage_entropy(soft):
+    """Shannon entropy (nats) of the mean amino-acid usage across positions. High = diverse,
+    low = collapsed onto one residue (the poly-M/poly-K homopolymer failure)."""
+    usage = soft.mean(0)
+    return -(usage * jnp.log(usage + 1e-9)).sum()
+
+
+def repetition(soft):
+    """Mean overlap between adjacent-position distributions. High = local homopolymer / motif
+    runs (AAAA, AGAG); a differentiable surrogate for the R_hpoly repetition score."""
+    return (soft[:-1] * soft[1:]).sum(-1).mean()
+
+
 def ptm_energy(output):
     """pTMEnergy (Nori et al. 2025, Eq 8): pAE logits as a LogSumExp energy, pTM-kernel weighted,
     over inter-chain pairs. Dense gradients, unlike the max-based affinity head. Lower better."""

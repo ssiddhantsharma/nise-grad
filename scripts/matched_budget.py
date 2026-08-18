@@ -15,15 +15,23 @@ import numpy as np
 import optax
 from mosaic.losses.structure_prediction import BinderTargetContact
 
-from nisegrad.optimize import AA_ORDER, decode, foldability, interface_pae, ptm_energy, sigmoid
+from nisegrad.optimize import (
+    AA_ORDER, decode, foldability, interface_pae, ptm_energy, repetition, sigmoid, usage_entropy,
+)
 from nisegrad.oracle import PbindOracle
 
 
 def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None,
-              contact_weight=0.0, ptm_energy_obj=False, pocket_scaffold=False):
+              contact_weight=0.0, ptm_energy_obj=False, pocket_scaffold=False,
+              entropy_weight=0.0, repeat_weight=0.0, ste_backward_temp=1.0):
     """STE to max(checkpoints) steps, snapshotting each budget. Objective is -P(bind), or
-    pTMEnergy (ptm_energy_obj), plus optional confidence / contact / pocket-scaffold terms.
-    init_seq biases the start toward a scaffold sequence; see the flags for what each does."""
+    pTMEnergy (ptm_energy_obj), plus optional confidence / contact / pocket-scaffold terms and the
+    anti-collapse penalties. init_seq biases the start toward a scaffold sequence.
+
+    ste_backward_temp is the decoupled-STE backward temperature: forward stays the hard argmax, the
+    gradient flows through softmax(logits / temp). temp < 1 sharpens the gradient; 1.0 is the plain
+    STE (byte-identical). entropy_weight rewards usage diversity, repeat_weight penalizes adjacent
+    repetition; both fight the homopolymer collapse."""
     key = jax.random.PRNGKey(0)
     contact = BinderTargetContact(contact_distance=8.0) if contact_weight else None
     # pocket-then-scaffold (L-Caliby): concentrate contact on the top-12 pocket residues, fold
@@ -32,8 +40,9 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
 
     def loss_fn(logits):
         soft = jax.nn.softmax(logits, -1)
-        hard = jax.nn.one_hot(jnp.argmax(soft, -1), 20)
-        seq = soft + jax.lax.stop_gradient(hard - soft)   # forward=hard, backward=soft
+        soft_b = jax.nn.softmax(logits / ste_backward_temp, -1) if ste_backward_temp != 1.0 else soft
+        hard = jax.nn.one_hot(jnp.argmax(logits, -1), 20)
+        seq = soft_b + jax.lax.stop_gradient(hard - soft_b)   # forward=hard, backward=grad thru soft_b
         pbind, output = oracle.pbind_and_output(seq, feats, key, recycling_steps=3)
         loss = ptm_energy(output) if ptm_energy_obj else -pbind
         if confidence_weight:
@@ -42,6 +51,10 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
             loss = loss + contact_weight * contact(seq, output, key)[0]
         if pocket_scaffold:
             loss = loss + 0.1 * pocket(seq, output, key)[0] + 0.1 * foldability(output)
+        if entropy_weight:
+            loss = loss + entropy_weight * (jnp.log(20.0) - usage_entropy(soft))
+        if repeat_weight:
+            loss = loss + repeat_weight * repetition(soft)
         return loss, pbind
 
     noise = 0.1 * jax.random.normal(jax.random.PRNGKey(seed), (binder_len, 20))
@@ -158,6 +171,12 @@ def main():
                     help="ste only: optimize pTMEnergy (BindEnergyCraft) instead of the affinity head")
     ap.add_argument("--pocket-scaffold", action="store_true",
                     help="ste only: L-Caliby pocket-then-scaffold (pocket contact + scaffold pLDDT)")
+    ap.add_argument("--entropy-weight", type=float, default=0.0,
+                    help="ste only: reward amino-acid usage diversity (anti-collapse, 0 = off)")
+    ap.add_argument("--repeat-weight", type=float, default=0.0,
+                    help="ste only: penalize adjacent-position repetition (anti-collapse, 0 = off)")
+    ap.add_argument("--ste-backward-temp", type=float, default=1.0,
+                    help="ste only: decoupled-STE backward temperature (<1 sharpens; 1.0 = plain STE)")
     ap.add_argument("--out", default="sweep.json")
     a = ap.parse_args()
     checkpoints = sorted(int(x) for x in a.checkpoints.split(","))
@@ -168,13 +187,16 @@ def main():
         sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
                           confidence_weight=a.confidence_weight, init_seq=a.init_seq,
                           contact_weight=a.contact_weight, ptm_energy_obj=a.ptm_energy,
-                          pocket_scaffold=a.pocket_scaffold)
+                          pocket_scaffold=a.pocket_scaffold, entropy_weight=a.entropy_weight,
+                          repeat_weight=a.repeat_weight, ste_backward_temp=a.ste_backward_temp)
     else:
         sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
             oracle, feats, a.binder_len, checkpoints, a.seed)
 
     label = a.method
-    if a.pocket_scaffold:
+    if a.pocket_scaffold and a.ptm_energy:
+        label = "ste_all"
+    elif a.pocket_scaffold:
         label = "ste_pkt"
     elif a.ptm_energy:
         label = "ste_ptm"
@@ -184,6 +206,10 @@ def main():
         label = f"ste_ct{a.contact_weight:g}"
     elif a.confidence_weight:
         label = f"ste_c{a.confidence_weight:g}"
+    elif a.entropy_weight or a.repeat_weight:
+        label = f"ste_div{a.entropy_weight:g}_{a.repeat_weight:g}"
+    elif a.ste_backward_temp != 1.0:
+        label = f"ste_dste{a.ste_backward_temp:g}"
     out = Path(a.out)
     rows = json.loads(out.read_text()) if out.exists() else []
     for budget, (seq, pbind) in sweep.items():
