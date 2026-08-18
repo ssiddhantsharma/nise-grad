@@ -1,7 +1,7 @@
-"""Re-score designs on Protenix-v2 (a second, independent held-out oracle).
+"""Score designs on Protenix-v2, the independent held-out judge.
 
-Question: does Protenix discriminate real binding from scramble/random/poly-Q better than
-jopendde ipTM did? Two modes:
+Its gpde and ranking_score (anchor-validated: a real binder scores gpde ~0.3, scrambled/random
+~2.5) discriminate real binding from nonsense far better than a generic interface ipTM. Two modes:
   build  designs JSON -> a Protenix `pred` input JSON (proteinChain + ligand SMILES)
   parse  Protenix output dir -> iptm, ligand-specific ipTM (binder-ligand chain pair),
          gpde (lower better), ranking_score, written back into the designs JSON + a report.
@@ -54,15 +54,16 @@ def parse(rows, outdir, seed):
         for k in ("protenix_iptm", "protenix_lig_iptm", "protenix_gpde", "protenix_ranking"):
             if r.get(k) is not None:
                 agg[key(r)][k].append(r[k])
+    def fmt(a, k):
+        return f"{sum(a[k]) / len(a[k]):.2f}" if a.get(k) else "  -"
+
     print("\n== Protenix-v2 held-out (mean per group) ==", flush=True)
     print(f"{'group':<20} {'iptm':>6} {'lig_iptm':>9} {'gpde':>6} {'rank':>6}  n", flush=True)
     for g in sorted(agg):
         a = agg[g]
-        def m(k):
-            return f"{sum(a[k]) / len(a[k]):.2f}" if a.get(k) else "  -"
         n = len(a.get("protenix_iptm", []))
-        print(f"{g:<20} {m('protenix_iptm'):>6} {m('protenix_lig_iptm'):>9} "
-              f"{m('protenix_gpde'):>6} {m('protenix_ranking'):>6}  {n}", flush=True)
+        print(f"{g:<20} {fmt(a, 'protenix_iptm'):>6} {fmt(a, 'protenix_lig_iptm'):>9} "
+              f"{fmt(a, 'protenix_gpde'):>6} {fmt(a, 'protenix_ranking'):>6}  {n}", flush=True)
 
 
 def main():

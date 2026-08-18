@@ -21,8 +21,7 @@ def decode(logits) -> str:
 
 
 def interface_pae(output):
-    """Mean predicted aligned error between the binder chain and the ligand (lower = more
-    confident interface). A second, structure-based Boltz head, differentiable in the sequence."""
+    """Mean binder-to-ligand predicted aligned error (lower = more confident interface)."""
     asym = output.asym_id
     binder = (asym == asym[0]).astype(output.pae.dtype)   # first chain is the binder
     ligand = 1.0 - binder
@@ -31,16 +30,13 @@ def interface_pae(output):
 
 
 def foldability(output):
-    """1 - mean pLDDT (lower = better folded). A scaffold-side objective: the whole design should
-    fold confidently, separate from the pocket-side binding pressure."""
+    """1 - mean pLDDT (lower = better folded)."""
     return 1.0 - output.plddt.mean()
 
 
 def ptm_energy(output):
-    """pTMEnergy (Nori et al. 2025, BindEnergyCraft, Eq 8). Reinterpret the pAE logits as an
-    energy via LogSumExp over distance bins (the JEM trick), weighted by the pTM kernel g(d) and
-    averaged over inter-chain (binder-ligand) pairs. Unlike the max-based affinity/ipTM head this
-    gives dense gradients across the whole interface, so it resists reward-hacking. Lower better."""
+    """pTMEnergy (Nori et al. 2025, Eq 8): pAE logits as a LogSumExp energy, pTM-kernel weighted,
+    over inter-chain pairs. Dense gradients, unlike the max-based affinity head. Lower better."""
     logits = output.pae_logits                             # [N, N, Bins]
     n = logits.shape[0]
     d0 = jnp.maximum(1.24 * (n - 15) ** (1.0 / 3.0) - 1.8, 1e-3)
@@ -53,17 +49,9 @@ def ptm_energy(output):
 
 def optimize_pbind(oracle, features, binder_len, *, steps=40, lr=0.05, seed=0, key_seed=0,
                    recycling_steps=0, straight_through=False, confidence_weight=0.0):
-    """Ascend P(bind). Returns (final_logits, per-step P(bind) logits).
-
-    recycling_steps>0 folds a physical structure each step (slower, more memory), so P(bind)
-    sees real geometry instead of recycling=0 noise.
-
-    straight_through=True feeds the oracle the DISCRETE argmax sequence in the forward pass
-    (so the reported P(bind) is the real discrete number, not the soft optimum) while passing
-    the gradient through the soft distribution -- optimizes the discrete objective directly.
-
-    confidence_weight>0 also minimizes the binder-ligand interface PAE (a second Boltz head),
-    so the design must form a confident predicted interface, not just fool the affinity head."""
+    """Ascend P(bind); returns (final_logits, per-step P(bind) logits). recycling_steps>0 folds a
+    physical structure each step. straight_through folds the discrete argmax but passes gradients
+    through the softmax (STE). confidence_weight adds the interface-PAE term."""
     key = jax.random.PRNGKey(key_seed)
 
     def loss_fn(logits):

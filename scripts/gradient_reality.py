@@ -1,7 +1,7 @@
 """Naive gradient ascent reward-hacks; a straight-through step (STE) fixes it.
 
 Benchmark: 30aa binder, recycling=3, num_sampling_steps=25, 3 seeds each. "discrete P(bind)"
-is the P(bind) of the argmax sequence, refolded -- the number that matters. Naive optimizes the
+is the P(bind) of the argmax sequence, refolded, the number that matters. Naive optimizes the
 soft sequence: its soft P(bind) is ~0.9 but the discrete design scores 0.33-0.41 and is
 degenerate. STE optimizes the discrete sequence directly: 0.44-0.73 with realistic composition.
 """

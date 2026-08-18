@@ -8,7 +8,7 @@ Grounded in the verified Boltz feature layout (checked on a real benzoic-acid co
   - `output.structure_coordinates[0]` is the [A,3] all-atom coords
 
 For a small-molecule ligand (M <= atom_context_num) every binder residue sees the whole
-ligand, so Y is the same M atoms broadcast per residue -- exactly the pre-limited context
+ligand, so Y is the same M atoms broadcast per residue, exactly the pre-limited context
 the use_side_chains=False model expects, no per-residue topk needed.
 """
 
@@ -27,7 +27,7 @@ def build_boltz_regularizer(model, features: dict, *, frozen_output=None, randn_
 
     frozen_output: a StructureModelOutput to freeze the backbone + ligand geometry from
     (fold once with recycling_steps>=3 for a physical scaffold). When given, the regularizer
-    scores every step's soft sequence against this fixed physical structure -- the correct way
+    scores every step's soft sequence against this fixed physical structure, the correct way
     to use an inverse-folding prior. When None, it reads each step's live (recycling=0) output,
     which is non-physical and only kept for comparison.
     """

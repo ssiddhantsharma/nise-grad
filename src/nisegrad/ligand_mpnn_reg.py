@@ -2,7 +2,7 @@
 
 The binder's soft sequence is scored by LigandMPNN given the predicted backbone AND the
 ligand context, so the negative log-likelihood keeps the design both protein-like and
-ligand-compatible -- unlike a ligand-blind ProteinMPNN regularizer, which was blind to the
+ligand-compatible, unlike a ligand-blind ProteinMPNN regularizer, which was blind to the
 very interaction P(bind) is reward-hacking.
 
 The two pure functions (af20_to_mpnn20, nll_from_logprobs) carry the bug-prone logic and are
@@ -39,9 +39,9 @@ class LigandMPNNRegularizer:
 
     model  : jligandmpnn.LigandMPNN (from_torch of a real checkpoint)
     feats  : dict of the FIXED LigandMPNN inputs (mask, Y_m, Y_t, R_idx, chain_labels,
-             chain_mask, randn), each batched [1, ...] -- everything but the coordinates
+             chain_mask, randn), each batched [1, ...], everything but the coordinates
     struct_from_output : output -> (X [1,L,4,3] binder backbone N/Ca/C/O, Y [1,L,M,3]
-             ligand-atom context) -- both differentiable, taken from the predicted structure
+             ligand-atom context), both differentiable, taken from the predicted structure
     binder_mask : [L] float, 1.0 on designed binder residues
     """
 

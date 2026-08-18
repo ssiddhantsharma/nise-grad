@@ -52,7 +52,7 @@ def load_affinity_head(aff_ckpt: Path = DEFAULT_AFF_CKPT):
     module.eval()
     aff = joltz.from_torch(module)
     # from_torch stores weights as numpy; make them jax arrays so the distogram
-    # embedding (weight[traced_tokens]) works under jit -- numpy[tracer] does not.
+    # embedding (weight[traced_tokens]) works under jit, numpy[tracer] does not.
     return jax.tree.map(lambda x: jnp.asarray(x) if isinstance(x, np.ndarray) else x, aff)
 
 

@@ -1,18 +1,8 @@
-"""Matched-oracle-budget sweep: does gradient guidance's edge over Best-K-of-N grow with budget?
+"""Generate designs over a fold budget. Methods: ste (gradient), bestn (Best-K-of-N), o3 (latent
+BO, Kalisz et al. 2026). A single run to max(checkpoints) snapshots every budget. One run per
+process; a second optimize/jit in the same process leaks a JAX tracer:
 
-At a budget of B Boltz folds, STE takes B gradient steps; Best-K-of-N folds B random sequences
-(from STE's own init distribution) and keeps the best. Because STE's trajectory passes through
-every step and Best-K-of-N's best-so-far only improves, ONE run to max(checkpoints) yields the
-design at every checkpoint, so a single process per (method, seed) sweeps all budgets. Winners
-are scored later on a held-out oracle (protenix_score.py); the transfer edge vs budget is the point.
-
-Methods: ste (gradient), bestn (Best-K-of-N sampling), o3 (latent Bayesian optimization, an
-adapted Kalisz et al. 2026 baseline). One run per process (a second optimize/jit in the same
-process leaks a JAX tracer):
-
-  for s in 0 1 2 3 4; do python matched_budget.py --method ste   --seed $s --out sweep.json; done
-  for s in 0 1 2 3 4; do python matched_budget.py --method bestn --seed $s --out sweep.json; done
-  for s in 0 1 2 3 4; do python matched_budget.py --method o3    --seed $s --out sweep.json; done
+  for s in 0 1 2 3 4; do python matched_budget.py --method ste --seed $s --out sweep.json; done
 """
 
 import argparse
@@ -31,15 +21,9 @@ from nisegrad.oracle import PbindOracle
 
 def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None,
               contact_weight=0.0, ptm_energy_obj=False, pocket_scaffold=False):
-    """STE (as in optimize_pbind) to max(checkpoints) steps; snapshot the design at each.
-    confidence_weight>0 adds the binder-ligand interface PAE (a second Boltz head), so the
-    design must form a confident predicted interface, not just fool the affinity head.
-    contact_weight>0 adds mosaic's BinderTargetContact on the Boltz distogram (binder residue ->
-    ligand atom, <8A), which explicitly forces a real interface rather than a gamed affinity head.
-    ptm_energy_obj replaces the affinity head with pTMEnergy (BindEnergyCraft, Eq 8): a dense,
-    LogSumExp interface energy over the pAE logits that resists the reward-hacking of the max-based
-    affinity head. init_seq (a real scaffold sequence) biases the starting logits so STE refines a
-    real fold rather than hallucinating from noise; per-seed noise still varies the trajectory."""
+    """STE to max(checkpoints) steps, snapshotting each budget. Objective is -P(bind), or
+    pTMEnergy (ptm_energy_obj), plus optional confidence / contact / pocket-scaffold terms.
+    init_seq biases the start toward a scaffold sequence; see the flags for what each does."""
     key = jax.random.PRNGKey(0)
     contact = BinderTargetContact(contact_distance=8.0) if contact_weight else None
     # pocket-then-scaffold (L-Caliby): concentrate contact on the top-12 pocket residues, fold
