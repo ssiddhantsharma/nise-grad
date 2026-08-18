@@ -38,9 +38,13 @@ def parse(rows, outdir, seed):
             continue
         cs = [json.loads(h.read_text()) for h in hits]
         r["protenix_iptm"] = _mean([c.get("iptm") for c in cs])
+        # build() writes exactly two chains, binder (A) first, ligand (B) second, so the binder
+        # /ligand cell is [0][1]. Guard the shape so a reordered/extra-chain output fails loudly
+        # instead of silently reading the wrong pair.
         r["protenix_lig_iptm"] = _mean(
             [c["chain_pair_iptm"][0][1] for c in cs
-             if c.get("chain_pair_iptm") and len(c["chain_pair_iptm"]) > 1])
+             if c.get("chain_pair_iptm") and len(c["chain_pair_iptm"]) == 2
+             and len(c["chain_pair_iptm"][0]) == 2])
         r["protenix_gpde"] = _mean([c.get("gpde") for c in cs])
         r["protenix_ranking"] = _mean([c.get("ranking_score") for c in cs])
 

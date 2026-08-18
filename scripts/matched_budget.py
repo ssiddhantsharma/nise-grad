@@ -3,6 +3,10 @@ BO, Kalisz et al. 2026). A single run to max(checkpoints) snapshots every budget
 process; a second optimize/jit in the same process leaks a JAX tracer:
 
   for s in 0 1 2 3 4; do python matched_budget.py --method ste --seed $s --out sweep.json; done
+
+Budget is optimizer steps / folds, not FLOPs: an ste step is a forward + backward (~3x a fold),
+while bestn and o3 spend one forward fold per unit budget. Cross-method comparison at equal budget
+is therefore not compute-matched; compare at equal forward-passes or state the caveat.
 """
 
 import argparse
@@ -16,22 +20,26 @@ import optax
 from mosaic.losses.structure_prediction import BinderTargetContact
 
 from nisegrad.optimize import (
-    AA_ORDER, decode, foldability, interface_pae, ptm_energy, repetition, sigmoid, usage_entropy,
+    AA_ORDER, composition_kl, decode, foldability, interface_pae, ptm_energy, repetition, sigmoid,
 )
 from nisegrad.oracle import PbindOracle
 
 
 def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.0, init_seq=None,
               contact_weight=0.0, ptm_energy_obj=False, pocket_scaffold=False,
-              entropy_weight=0.0, repeat_weight=0.0, ste_backward_temp=1.0):
+              composition_weight=0.0, repeat_weight=0.0, ste_backward_temp=1.0):
     """STE to max(checkpoints) steps, snapshotting each budget. Objective is -P(bind), or
     pTMEnergy (ptm_energy_obj), plus optional confidence / contact / pocket-scaffold terms and the
     anti-collapse penalties. init_seq biases the start toward a scaffold sequence.
 
     ste_backward_temp is the decoupled-STE backward temperature: forward stays the hard argmax, the
     gradient flows through softmax(logits / temp). temp < 1 sharpens the gradient; 1.0 is the plain
-    STE (byte-identical). entropy_weight rewards usage diversity, repeat_weight penalizes adjacent
-    repetition; both fight the homopolymer collapse."""
+    STE (byte-identical). composition_weight penalizes KL(usage || natural background), repeat_weight
+    penalizes adjacent repetition; both fight the homopolymer collapse.
+
+    The fold key is fixed (PRNGKey(0)) so the diffusion noise is identical across designs and steps,
+    removing fold-sampling variance as a confound; it also means a design can overfit one noise
+    draw. Average headline numbers over a few keys if that matters."""
     key = jax.random.PRNGKey(0)
     contact = BinderTargetContact(contact_distance=8.0) if contact_weight else None
     # pocket-then-scaffold (L-Caliby): concentrate contact on the top-12 pocket residues, fold
@@ -51,8 +59,8 @@ def ste_sweep(oracle, feats, binder_len, checkpoints, seed, confidence_weight=0.
             loss = loss + contact_weight * contact(seq, output, key)[0]
         if pocket_scaffold:
             loss = loss + 0.1 * pocket(seq, output, key)[0] + 0.1 * foldability(output)
-        if entropy_weight:
-            loss = loss + entropy_weight * (jnp.log(20.0) - usage_entropy(soft))
+        if composition_weight:
+            loss = loss + composition_weight * composition_kl(soft)
         if repeat_weight:
             loss = loss + repeat_weight * repetition(soft)
         return loss, pbind
@@ -171,10 +179,10 @@ def main():
                     help="ste only: optimize pTMEnergy (BindEnergyCraft) instead of the affinity head")
     ap.add_argument("--pocket-scaffold", action="store_true",
                     help="ste only: L-Caliby pocket-then-scaffold (pocket contact + scaffold pLDDT)")
-    ap.add_argument("--entropy-weight", type=float, default=0.0,
-                    help="ste only: reward amino-acid usage diversity (anti-collapse, 0 = off)")
+    ap.add_argument("--composition-weight", type=float, default=0.0,
+                    help="ste only: penalize KL(usage || natural AA background) (anti-collapse, 0 = off)")
     ap.add_argument("--repeat-weight", type=float, default=0.0,
-                    help="ste only: penalize adjacent-position repetition (anti-collapse, 0 = off)")
+                    help="ste only: penalize adjacent homopolymer repetition (anti-collapse, 0 = off)")
     ap.add_argument("--ste-backward-temp", type=float, default=1.0,
                     help="ste only: decoupled-STE backward temperature (<1 sharpens; 1.0 = plain STE)")
     ap.add_argument("--out", default="sweep.json")
@@ -187,7 +195,7 @@ def main():
         sweep = ste_sweep(oracle, feats, a.binder_len, checkpoints, a.seed,
                           confidence_weight=a.confidence_weight, init_seq=a.init_seq,
                           contact_weight=a.contact_weight, ptm_energy_obj=a.ptm_energy,
-                          pocket_scaffold=a.pocket_scaffold, entropy_weight=a.entropy_weight,
+                          pocket_scaffold=a.pocket_scaffold, composition_weight=a.composition_weight,
                           repeat_weight=a.repeat_weight, ste_backward_temp=a.ste_backward_temp)
     else:
         sweep = {"bestn": bestn_sweep, "o3": o3_sweep}[a.method](
@@ -206,8 +214,8 @@ def main():
         label = f"ste_ct{a.contact_weight:g}"
     elif a.confidence_weight:
         label = f"ste_c{a.confidence_weight:g}"
-    elif a.entropy_weight or a.repeat_weight:
-        label = f"ste_div{a.entropy_weight:g}_{a.repeat_weight:g}"
+    elif a.composition_weight or a.repeat_weight:
+        label = f"ste_div{a.composition_weight:g}_{a.repeat_weight:g}"
     elif a.ste_backward_temp != 1.0:
         label = f"ste_dste{a.ste_backward_temp:g}"
     out = Path(a.out)

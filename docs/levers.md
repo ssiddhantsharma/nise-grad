@@ -53,7 +53,7 @@ CPU-verified: forward stays hard at every tau_b; grad-norm 19.5 / 7.9 / 3.6 at t
 Note: this applies the decoupling principle to a hard-forward STE; it is not the paper's exact
 soft-forward variant.
 
-### Anti-collapse penalties (`--entropy-weight`, `--repeat-weight`)
+### Anti-collapse penalties (`--composition-weight`, `--repeat-weight`)
 "Controlling Repetition in Protein Language Models" (arXiv 2602.00782). Names our exact symptom:
 "A single residue is extended into long runs (e.g., AAAAAA) ... a global collapse into a
 low-complexity sequence dominated by one amino acid type." Their metrics:
@@ -65,14 +65,18 @@ low-complexity sequence dominated by one amino acid type." Their metrics:
 Their method (UCCS) is inference-time activation steering on a PLM's hidden states, "without
 retraining"; it does not operate on a sequence-logit simplex, so it does not port to our gradient
 loop. R_hpoly itself is non-differentiable (hard run-length + indicator). We therefore hand-roll
-two differentiable surrogates on the simplex:
+two differentiable simplex terms:
 
-    usage_entropy(soft) = entropy(mean_positions(soft))      # reward: penalize log20 - this
-    repetition(soft)    = mean_i <soft_i, soft_{i+1}>        # penalty: adjacent-position overlap
+    composition_kl(soft) = KL(mean_positions(soft) || SwissProt background)   # penalize
+    repetition(soft)     = mean_i <soft_i, soft_{i+1}>                        # penalize
 
-CPU-verified separation: poly-M scores usage_entropy 0.00 / repetition 1.00; a diverse sequence
-scores 2.94 / 0.00. Data-side motivation in `figures/collapse.png` (optimized designs maxAA
-0.21-0.24 vs real binder 0.12). Implemented in `optimize.usage_entropy` / `optimize.repetition`.
+composition_kl targets the natural amino-acid background, not a plain max-entropy reward: max
+entropy would push toward a uniform 5%-each composition, which is itself unnatural, whereas the KL
+matches real frequencies. repetition catches only adjacent (k=2) repetition, i.e. R_hpoly-style
+homopolymers, not periodic motifs (AGAG scores ~0); it is an anti-homopolymer term, not a general
+anti-repeat one. Data-side motivation in `figures/collapse.png` (optimized designs maxAA 0.21-0.24
+vs real binder 0.12, though 0.21 is biased composition, not extreme homopolymer). Implemented in
+`optimize.composition_kl` / `optimize.repetition`.
 
 ## Late projection
 
