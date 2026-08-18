@@ -3,6 +3,28 @@
 Design rationale for each term in the optimizer, with the primary-source formula and a verbatim
 quote where the claim is load-bearing. Verified against the source PDF/HTML, not a summary.
 
+## Benchmark anchors and provenance
+
+The held-out filter is only as good as its positive control. The original `anchor_real` sequence
+(`APSLEEQ...`, 123 aa) has no documented provenance and, on inspection, does not match the deposited
+crystal-structure de-novo apixaban binder; its 0.98 score cannot be relied on. It is retired in
+favour of provenance-documented, crystal-validated anchors from Lee, Pellock, Norn et al.,
+"Small-molecule binding and sensing with a designed protein family", Nat Commun 2026
+(doi:10.1038/s41467-026-70953-8). These are defined in `scripts/data/anchors.json`:
+
+- apx1049 (apixaban) - PDB 8VEZ (2.15 A) / 8VFQ (2.10 A), ligand GG2, 119 aa.
+- hcy129_mpnn5 (cortisol) - PDB 8UQF (1.52 A), ligand HCY, 135 aa.
+
+Ligand SMILES are the PDB chemical-component canonical strings, verified by InChIKey (GG2 apixaban
+QNZCBYKSOIHPEH, achiral; HCY cortisol JYGXADMDTFJGBT-VWUMJDOOSA-N, full steroid stereochemistry -
+the non-stereo string silently loses it). The repo's existing apixaban SMILES is confirmed identical
+to GG2 (same InChIKey), so the ligand was always correct; only the anchor protein was wrong. These
+binders come from NTF2-family backbone hallucination + ProteinMPNN, i.e. pocket/backbone design -
+the paradigm this repo's characterization argues sequence-only gradient cannot reach, so they double
+as citable corroboration. Cortisol (a steroid) is chemically distinct from apixaban, giving a second
+target for the held-out ceiling. Establishing anchor scores and the cortisol held-out needs folds
+(GPU); the definitions and verification here do not.
+
 ## Objectives
 
 ### Affinity head (default, `-P(bind)`)
