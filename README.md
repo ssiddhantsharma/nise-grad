@@ -129,6 +129,23 @@ layer, not the pocket generator.
 - `scripts/*_figure.py` the figures; `scripts/data/` the scored experiment logs
 - `scripts/optimize_ste.py` a single STE run
 
+## References and credit
+nise-grad borrows from and builds on:
+- NISE (Polizzi lab), the gradient-free selection loop this is a gradient counterpart to.
+  https://www.nature.com/articles/s41586-026-10670-w
+- DRaFT (Clark et al. 2023), reward backprop through a differentiable generative model.
+- O3 / oracle budgets (Kalisz et al. 2026), the black-box guidance literature we position against.
+- DBMol (Qin et al. 2026), the molecule-side mirror; corroborates the plateau and reward-hacking
+  and supplies the contact-loss idea. https://arxiv.org/abs/2607.19237
+- BindEnergyCraft (Nori et al. 2025), pTMEnergy, the energy objective that resists reward-hacking
+  (`--ptm-energy`). https://arxiv.org/abs/2505.21241
+- L-Caliby / Caliby (Shuai et al.), the pocket-then-scaffold decomposition (`--pocket-scaffold`).
+  https://github.com/ProteinDesignLab/caliby
+- RFdiffusion3 (Baker lab) and SeedProteo (ByteDance Seed), generative pocket design; the bridge.
+
+Tools: Boltz-2 (via joltz), Protenix-2, mosaic (`BinderTargetContact` and losses), and LigandMPNN
+(Dauparas et al.) via [jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
+
 ## Install
 ```
 pip install -e .
