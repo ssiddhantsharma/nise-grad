@@ -30,6 +30,12 @@ def interface_pae(output):
     return (output.pae * w).sum() / jnp.maximum(w.sum(), 1.0)
 
 
+def foldability(output):
+    """1 - mean pLDDT (lower = better folded). A scaffold-side objective: the whole design should
+    fold confidently, separate from the pocket-side binding pressure."""
+    return 1.0 - output.plddt.mean()
+
+
 def ptm_energy(output):
     """pTMEnergy (Nori et al. 2025, BindEnergyCraft, Eq 8). Reinterpret the pAE logits as an
     energy via LogSumExp over distance bins (the JEM trick), weighted by the pTM kernel g(d) and
