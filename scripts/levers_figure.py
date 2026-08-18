@@ -4,8 +4,8 @@ Held-out Protenix-2 ipTM per lever on apixaban (budget-25 designs): plain STE, +
 (interface-PAE), + contact (mosaic BinderTargetContact), + scaffold-init from a NISE pocket fold.
 Bars are the per-lever mean +/- s.d.; the diamond is that lever's best single design. All sit
 well below the real binder (0.98), the plateau is robust to the objective, consistent with the
-field's success requiring backbone/pocket design (RFdiffusion3, SeedProteo) rather than
-sequence-only gradient. Data: the *_scored.json experiment logs.
+field's success requiring backbone/pocket design rather than sequence-only gradient.
+Data: the *_scored.json experiment logs.
 """
 
 import json

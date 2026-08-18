@@ -23,8 +23,7 @@ apixaban binder scores iptm 0.98 / gpde 0.30, while scrambled and random sequenc
 gpde ~2.5. Generate-and-filter surfaces candidates approaching the real binder (best iptm ~0.86),
 but the held-out ceiling is robust: contact and confidence losses and scaffold initialization all
 raise yield, none break ~0.86. This mirrors DBMol (Qin et al. 2026) on the molecule side, and
-matches why the field's binders come from backbone design (RFdiffusion3, SeedProteo) rather than
-sequence-only gradient. Direction: Boltz-optimize, then Protenix-filter; wet lab is the real bar.
+matches why the field's binders come from backbone design rather than sequence-only gradient. Direction: Boltz-optimize, then Protenix-filter; wet lab is the real bar.
 
 ## Method
 A binder sequence over the 20-residue simplex is optimized by gradient ascent through a
@@ -115,9 +114,8 @@ sampler onto the data manifold (ADFLIP, DeFoG), not a gradient to a frozen struc
 `scripts/project.py`.
 
 The reading: sequence-only gradient design plateaus because it optimizes the sequence but never
-designs the pocket, and the field's small-molecule binders come from backbone design instead
-(RFdiffusion3, the Baker NTF2 family). nise-grad is the differentiable refinement and scoring
-layer, not the pocket generator.
+designs the pocket, and the field's small-molecule binders come from backbone design instead.
+nise-grad is the differentiable refinement and scoring layer, not the pocket generator.
 
 ## Layout
 - `src/nisegrad/oracle.py` differentiable `P(bind)(sequence, ligand)`, the in-loop optimizer
@@ -141,7 +139,6 @@ nise-grad borrows from and builds on:
   (`--ptm-energy`). https://arxiv.org/abs/2505.21241
 - L-Caliby / Caliby (Shuai et al.), the pocket-then-scaffold decomposition (`--pocket-scaffold`).
   https://github.com/ProteinDesignLab/caliby
-- RFdiffusion3 (Baker lab) and SeedProteo (ByteDance Seed), generative pocket design; the bridge.
 
 Tools: Boltz-2 (via joltz), Protenix-2, mosaic (`BinderTargetContact` and losses), and LigandMPNN
 (Dauparas et al.) via [jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
