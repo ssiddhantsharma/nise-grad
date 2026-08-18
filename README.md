@@ -107,6 +107,13 @@ across all of them stays 0.69 to 0.87 ipTM, well below the real binder at 0.98.
 
 ![levers](figures/levers.png)
 
+A late projection onto the foldable manifold (DBMol's optimize-then-project idea) does not
+rescue it either. Using LigandMPNN `score_soft` to gradient-descend a design toward a sequence
+that folds to its own frozen structure makes the held-out score worse (0.51 to 0.39), because it
+projects onto the reward-hacked structure rather than escaping it. A proper projection needs a
+sampler onto the data manifold (ADFLIP, DeFoG), not a gradient to a frozen structure.
+`scripts/project.py`.
+
 The reading: sequence-only gradient design plateaus because it optimizes the sequence but never
 designs the pocket, and the field's small-molecule binders come from backbone design instead
 (RFdiffusion3, the Baker NTF2 family). nise-grad is the differentiable refinement and scoring
