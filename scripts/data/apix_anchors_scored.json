@@ -1,0 +1,36 @@
+[
+  {
+    "method": "anchor_real",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "SGGSSARIAKAKKLIYKLEKLWNARDNDGILKLFKDDAVFNLNGVPYKGKEAIKKVLESAPKAKYKITKIDIKIVGNEIIVNVDVLATGPSGFTLKVKSTITFDEDMKITSYEVNLEGS",
+    "note": "apx1049",
+    "protenix_iptm": 0.9656492710113526,
+    "protenix_lig_iptm": 0.9656492710113526,
+    "protenix_gpde": 0.3410160779953003,
+    "protenix_ranking": 0.9640453815460205
+  },
+  {
+    "method": "anchor_scramble",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "EFSSSAINLDKIATGKLIGNAKGVKVYNVAARGEDPLIWYKFDKRTLLGLGKKTTYITSDSNVLKAKSTKGGIEILDDNINVEGIPNKEFEESKLIKVSDLYDVPKVMIAAKFAKVKKI",
+    "protenix_iptm": 0.3893556296825409,
+    "protenix_lig_iptm": 0.3893556296825409,
+    "protenix_gpde": 1.9388803720474244,
+    "protenix_ranking": 0.40151168704032897
+  },
+  {
+    "method": "anchor_random",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "PSKNLVDSYLEGAHDGKQLFRDCGRYWVNADEVYDMNKDRVAEQDSERAWFVDHNGNIKFQRTPRVDMEHKSYQERQQLTHDVPQASFYTIKMHCWAPNLRWHCGSKVIKYVCIMFNAV",
+    "protenix_iptm": 0.5095660448074341,
+    "protenix_lig_iptm": 0.5095660448074341,
+    "protenix_gpde": 1.9121655225753784,
+    "protenix_ranking": 0.508396315574646
+  }
+]
