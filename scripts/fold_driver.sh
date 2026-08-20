@@ -123,8 +123,8 @@ fi
 if has rescue; then
   echo "== rescue: design a fresh sequence on the real apx1049 pocket backbone =="
   REF_SEQ="$("$PY" -c "import json;print(next(r['seq'] for r in json.load(open('$ANCHORS')) if r['target']=='apixaban'))")"
-  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/oss/ligandmpnn_v_32_010_25.pt}"
-  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/oss/ligmpnn_ref}"
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/tools/NISE/LigandMPNN/model_params/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/tools/jligandmpnn/reference}"
   J="$OUT/rescue.json"
   build_anchors apixaban "$J" anchor_real
   for s in 0 1 2 3 4 5 6 7; do
