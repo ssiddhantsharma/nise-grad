@@ -149,4 +149,19 @@ if has guided; then
   run_protenix "$J"
 fi
 
+if has guidedsweep; then
+  echo "== guided-diffusion guidance-scale sweep (find a scale that stays physical) =="
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-weights/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-weights/jligandmpnn_reference}"
+  for sc in 0.05 0.1 0.2 0.3; do
+    J="$OUT/guided_s${sc}.json"
+    build_anchors apixaban "$J" anchor_real
+    for s in 0 1 2 3; do
+      CUDA_VISIBLE_DEVICES="$GPU" "$PY" "$REPO/scripts/guided_design.py" \
+        --ligand "$APIX_SMILES" --binder-len 120 --scale "$sc" --seed "$s" --out "$J"
+    done
+    run_protenix "$J"
+  done
+fi
+
 echo "ALLDONE  results in $OUT/*.json"
