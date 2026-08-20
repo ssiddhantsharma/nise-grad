@@ -134,4 +134,17 @@ if has rescue; then
   run_protenix "$J"
 fi
 
+if has guided; then
+  echo "== guided diffusion: hallucinate a pocket, design a sequence, judge held-out =="
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/tools/NISE/LigandMPNN/model_params/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/tools/jligandmpnn/reference}"
+  J="$OUT/guided.json"
+  build_anchors apixaban "$J" anchor_real
+  for s in 0 1 2 3 4 5 6 7; do
+    CUDA_VISIBLE_DEVICES="$GPU" "$PY" "$REPO/scripts/guided_design.py" \
+      --ligand "$APIX_SMILES" --binder-len 120 --scale 0.5 --seed "$s" --out "$J"
+  done
+  run_protenix "$J"
+fi
+
 echo "ALLDONE  results in $OUT/*.json"
