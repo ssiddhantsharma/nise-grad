@@ -1,11 +1,7 @@
-"""Full gradient-guided-diffusion pipeline: hallucinate a pocket, design a sequence, judge held-out.
-
-guided_sample forms a pocket around the ligand by geometric guidance (poly-A conditioning, no real
-binder as a seed). We freeze that guided backbone, gradient-descend a fresh random-init sequence to
-fit it (LigandMPNN NLL), and write it out for an independent Protenix refold. The nise-native de-novo
-small-molecule binder attempt: no RFdiffusion, no real binder. One design/process (a second jit leaks
-a JAX tracer). Env: LIGANDMPNN_CKPT, LIGMPNN_MODEL_DIR.
-"""
+"""Guided-diffusion pipeline: guided_sample forms a pocket around the ligand (poly-A conditioning,
+no real binder seed), we freeze that backbone, design a fresh sequence to fit it (LigandMPNN NLL),
+and write it for an independent Protenix refold. One design/process (a second jit leaks a tracer).
+Env: LIGANDMPNN_CKPT, LIGMPNN_MODEL_DIR."""
 
 import argparse
 import json
@@ -39,8 +35,7 @@ def load_ligandmpnn(ckpt, ref_dir):
 
 
 def guided_backbone(oracle, feats, scale, steps, key):
-    """Generate a pocket backbone by guided diffusion; return a minimal frozen output object with
-    the fields build_boltz_regularizer needs (structure_coordinates + backbone_coordinates)."""
+    """Guided-diffusion pocket backbone -> (frozen output with structure/backbone coords, potential)."""
     init_emb, trunk = boltz2_trunk(oracle.model, feats, recycling_steps=3, deterministic=True, key=key)
     q, c, to_keys, aeb, adb, ttb = oracle.model.diffusion_conditioning(
         trunk.s, trunk.z, init_emb.relative_position_encoding, feats)
