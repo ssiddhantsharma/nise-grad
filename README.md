@@ -123,6 +123,23 @@ binder at 0.86.
 
 ![levers](figures/levers.png)
 
+The decoupled-STE sweep is flat across temperatures, and the plateau is not apixaban-specific
+(cortisol STE designs vs the real cortisol binder):
+
+![decoupled-STE temperature sweep](figures/dste_sweep.png)
+
+![second target, cortisol](figures/two_target.png)
+
+Two per-lever details: pTMEnergy improves the structure (gpde) but not the binding ceiling, and the
+sequence collapse the composition/repetition terms target is real and measurable; the distogram
+contact loss lifts the mean but does not break the band:
+
+![pTMEnergy: structure improves, binding does not](figures/ptm_energy.png)
+
+![sequence collapse: optimized designs vs real binder](figures/collapse.png)
+
+![distogram contact loss](figures/contact.png)
+
 The projection experiment shows the mechanism, and points to the fix. Projecting a design onto its
 own reward-hacked structure (LigandMPNN `score_soft`, `scripts/project.py`) makes the held-out score
 worse (0.51 -> 0.39): the structure is the problem, so fitting a sequence to it cannot help. But
