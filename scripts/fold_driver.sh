@@ -18,7 +18,9 @@ PY="$REPO/.venv/bin/python"
 MB="$REPO/scripts/matched_budget.py"
 PS="$REPO/scripts/protenix_score.py"
 ANCHORS="$REPO/scripts/data/anchors.json"
-PROTENIX_DIR="${PROTENIX_DIR:-$HOME/siddhant/tools/Protenix}"
+# Set these to your local installs before running: PROTENIX_DIR (Protenix checkout), and for the
+# rescue/guided phases LIGANDMPNN_CKPT (ligandmpnn_v_32_010_25.pt) + LIGMPNN_MODEL_DIR (torch ref dir).
+PROTENIX_DIR="${PROTENIX_DIR:-$HOME/Protenix}"
 OUT="${OUT:-/tmp/nisegrad_run}"; mkdir -p "$OUT"
 GPU="${CUDA_VISIBLE_DEVICES:-0}"
 SEED=101
@@ -123,8 +125,8 @@ fi
 if has rescue; then
   echo "== rescue: design a fresh sequence on the real apx1049 pocket backbone =="
   REF_SEQ="$("$PY" -c "import json;print(next(r['seq'] for r in json.load(open('$ANCHORS')) if r['target']=='apixaban'))")"
-  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/tools/NISE/LigandMPNN/model_params/ligandmpnn_v_32_010_25.pt}"
-  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/tools/jligandmpnn/reference}"
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-weights/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-weights/jligandmpnn_reference}"
   J="$OUT/rescue.json"
   build_anchors apixaban "$J" anchor_real
   for s in 0 1 2 3 4 5 6 7; do
@@ -136,8 +138,8 @@ fi
 
 if has guided; then
   echo "== guided diffusion: hallucinate a pocket, design a sequence, judge held-out =="
-  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/tools/NISE/LigandMPNN/model_params/ligandmpnn_v_32_010_25.pt}"
-  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/tools/jligandmpnn/reference}"
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-weights/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-weights/jligandmpnn_reference}"
   J="$OUT/guided.json"
   build_anchors apixaban "$J" anchor_real
   for s in 0 1 2 3 4 5 6 7; do
