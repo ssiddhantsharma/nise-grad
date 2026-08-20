@@ -71,3 +71,46 @@ def guided_sample(structure_module, atom_mask, num_sampling_steps, *, key,
     init = (sigmas[0] * jax.random.normal(shape=shape, key=key), jax.random.fold_in(key, 1))
     (atom_coords, _), _ = jax.lax.scan(body, init, (sigmas[:-1], sigmas[1:], gammas[1:]))
     return atom_coords
+
+
+def guided_forward_from_trunk(model, features, initial_embedding, trunk_state, *,
+                              num_sampling_steps, guidance_fn, guidance_scale, key):
+    """boltz2_forward_from_trunk with guided_sample swapped in; returns a full StructureModelOutput
+    (so ifsr and the pae/plddt binding terms work on the guided structure). Mirrors mosaic; keep in sync."""
+    from mosaic.losses.boltz2 import (BOLTZ2_DISTOGRAM_BINS, PAE_BINS, StructureModelOutput,
+                                      _BOLTZ_TOKATOM_TO_ATOM37, ref_atoms, scatter_atom37)
+
+    distogram_logits = model.distogram_module(trunk_state.z)[0, :, :, 0, :]
+    q, c, to_keys, aeb, adb, ttb = model.diffusion_conditioning(
+        trunk_state.s, trunk_state.z, initial_embedding.relative_position_encoding, features)
+    with jax.default_matmul_precision("float32"):
+        structure_coordinates = guided_sample(
+            model.structure_module, features["atom_pad_mask"], num_sampling_steps,
+            key=jax.random.fold_in(key, 2), guidance_fn=guidance_fn, guidance_scale=guidance_scale,
+            s_trunk=trunk_state.s, s_inputs=initial_embedding.s_inputs, feats=features, multiplicity=1,
+            diffusion_conditioning={"q": q, "c": c, "to_keys": to_keys, "atom_enc_bias": aeb,
+                                    "atom_dec_bias": adb, "token_trans_bias": ttb})
+    confidence = model.confidence_module(
+        s_inputs=initial_embedding.s_inputs, s=trunk_state.s, z=trunk_state.z,
+        x_pred=structure_coordinates, feats=features, pred_distogram_logits=distogram_logits[None],
+        key=jax.random.fold_in(key, 5), deterministic=True)
+
+    fu = jax.tree.map(lambda x: x[0], features)
+    assert ref_atoms["UNK"][:4] == ["N", "CA", "C", "O"]
+    first = jax.vmap(lambda atoms: jnp.nonzero(atoms, size=1)[0][0])(fu["atom_to_token"].T)
+    all_atom = structure_coordinates[0]
+    backbone = jnp.stack([all_atom[first + i] for i in range(4)], -2)
+    n_tokens = fu["res_type"].shape[0]
+    res_slot = fu["res_type"].argmax(-1)
+    a2t = fu["atom_to_token"].argmax(-1)
+    tokatom_idx = jnp.arange(a2t.shape[0]) - first[a2t]
+    atom37_idx = jnp.asarray(_BOLTZ_TOKATOM_TO_ATOM37)[res_slot[a2t], tokatom_idx]
+    atom37_idx = jnp.where(fu["atom_pad_mask"] > 0.5, atom37_idx, jnp.int32(-1))
+    atom37_coords, atom37_mask = scatter_atom37(all_atom, a2t, atom37_idx, n_tokens)
+
+    return StructureModelOutput(
+        distogram_logits=distogram_logits, distogram_bins=BOLTZ2_DISTOGRAM_BINS,
+        plddt=confidence.plddt[0], pae=confidence.pae[0], pae_logits=confidence.pae_logits[0],
+        pae_bins=PAE_BINS, structure_coordinates=structure_coordinates, backbone_coordinates=backbone,
+        full_sequence=features["res_type"][0][:, 2:22], asym_id=features["asym_id"][0],
+        residue_idx=features["residue_index"][0], atom37_coords=atom37_coords, atom37_mask=atom37_mask)
