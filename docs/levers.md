@@ -73,7 +73,10 @@ backward temperature:
 tau_b < 1 sharpens the gradient (exploitation), tau_b = 1 is the plain STE (byte-identical).
 CPU-verified: forward stays hard at every tau_b; grad-norm 19.5 / 7.9 / 3.6 at tau_b 0.5 / 1.0 / 2.0.
 Note: this applies the decoupling principle to a hard-forward STE; it is not the paper's exact
-soft-forward variant.
+soft-forward variant. RESULT (fair sweep, held-out, n=5 each): flat at 0.42 / 0.42 / 0.42 for
+tau_b 0.25 / 0.5 / 0.75 and 0.36 at 2.0, all far below the real binder (0.97). Decoupling the
+temperature does not move the ceiling at any setting, so the plateau is not a gradient-estimator
+artifact.
 
 ### Anti-collapse penalties (`--composition-weight`, `--repeat-weight`)
 "Controlling Repetition in Protein Language Models" (arXiv 2602.00782). Names our exact symptom:
@@ -100,12 +103,23 @@ anti-repeat one. Data-side motivation in `figures/collapse.png` (optimized desig
 vs real binder 0.12, though 0.21 is biased composition, not extreme homopolymer). Implemented in
 `optimize.composition_kl` / `optimize.repetition`.
 
-## Late projection
+## Projection and the rescue
 
 ### jligandmpnn projector (`scripts/project.py`)
 Fold, freeze the structure, gradient-descend the LigandMPNN NLL of the soft sequence given that
 structure (`score_soft`). Result: HURTS the held-out (0.51 -> 0.39) because it projects onto the
-already-reward-hacked structure. Kept as a documented negative.
+already-reward-hacked structure. Kept as a documented negative, and the control for the rescue.
+
+### Rescue: design on a real backbone (`scripts/rescue_backbone.py`)
+Same projector mechanism, but freeze a REAL pocket backbone instead of the design's own. Fold the
+apx1049 crystal binder (recycling=3) to get a physical pocket, freeze it, then gradient-descend the
+LigandMPNN NLL of a fresh random-init sequence to fit it, and refold the result on Protenix. RESULT:
+held-out ipTM 0.83 (n=8, up to 0.91), gpde 0.66, realistic composition (maxAA ~0.17), near the real
+binder (0.97) and nearly double de-novo STE (0.45). The only change from the failing projector is a
+real backbone, so the bottleneck is the backbone, not the sequence layer. The designed sequences are
+genuinely fresh (different from apx1049), so this is not sequence recovery; it does use a real
+binder's backbone, so it demonstrates "given a good pocket", not de-novo generation.
+`figures/rescue.png`.
 
 ## Not implemented (verified, candidate next paradigm)
 

@@ -22,13 +22,14 @@ overfits.
 sits between amino acids and its argmax refolds to degenerate poly-X at P(bind) ~0.9. A
 straight-through estimator closes that soft-to-discrete gap, so STE optimizes the real discrete
 design's P(bind); the STE designs have realistic (if composition-biased) sequences, not poly-X. But
-STE still overfits Boltz, so the optimized oracle cannot be trusted on its own. The fix is to filter
-on Protenix-2: a real apixaban binder scores iptm 0.98 / gpde 0.30, while scrambled and random
-sequences sit at ~0.25 / gpde ~2.5. Generate-and-filter surfaces a few candidates toward the real
-binder (best iptm 0.86, but only 5 of 90 designs clear 0.7), and no objective lever breaks that
-band. This mirrors DBMol (Qin et al. 2026) on the molecule side. All held-out results here are a
-single ligand (apixaban) with single-sequence anchors, so read the ceiling as suggestive, not
-established (see Limitations). Direction: Boltz-optimize, then Protenix-filter; wet lab is the real
+STE still overfits Boltz, so the optimized oracle cannot be trusted on its own; filter on Protenix-2,
+anchored by real crystal binders (apixaban apx1049 0.97 / gpde 0.34, cortisol hcy129 0.86 / gpde
+0.62) vs scramble/random at 0.24 to 0.51 / gpde 1.9 to 2.7. De-novo gradient plateaus below the real
+binder and no objective lever (eight tried, including a decoupled-STE temperature sweep) or second
+target breaks that band. The bottleneck is the pocket, not the sequence: freezing a real backbone
+and designing a fresh sequence to fit it reaches held-out 0.83, nearly double de-novo (0.45) and
+near the real binder (0.97). This mirrors DBMol (Qin et al. 2026) on the molecule side. Direction:
+gradient design as a differentiable refinement layer over a designed backbone; wet lab is the real
 bar.
 
 ## Method
@@ -101,45 +102,55 @@ is a mistake. Refold every design on a second model, Protenix-2, and keep only w
 weights are held out from the optimization, though it shares Boltz's architecture family and
 training data, so treat surviving as necessary, not sufficient). The metric matters: generic ipTM
 is too compressed to filter on (random sequences score ~0.7), while Protenix `gpde` and
-`ranking_score` separate this real binder from nonsense (anchors: real 0.98 / gpde 0.30 vs
-scramble/random 0.25 / gpde 2.5, n=1 each). As the optimization budget rises the Boltz proxy climbs
-while the held-out score does not follow it up (budget 25/100/250 -> 0.45/0.38/0.53, n=80/5/5), the
-same picture DBMol found on the molecule side. The high-budget points are few, so this is a stall,
-not a proven asymptote.
+`ranking_score` separate real crystal binders from nonsense. Two provenance-documented de-novo
+binders anchor the judge (Lee, Pellock, Norn et al., Nat Commun 2026): apixaban apx1049 (PDB 8VEZ)
+scores 0.97 / gpde 0.34 and cortisol hcy129 (PDB 8UQF) 0.86 / gpde 0.62, while scramble and random
+sit at 0.24 to 0.51 / gpde 1.9 to 2.7. As the optimization budget rises (25/100/250, n=20 each) the
+Boltz proxy climbs but the held-out ipTM does not follow it up (0.47 -> 0.43 -> 0.36) even as gpde
+improves (1.60 -> 1.19): more optimization buys a more confidently folded structure, not a better
+binder. The same picture DBMol found on the molecule side.
 
 ![plateau](figures/plateau.png)
 
-No objective lever moves the best design out of the band below the real binder. Confidence
-(interface PAE), contact (mosaic `BinderTargetContact` on the Boltz distogram), and scaffold
-initialization from a real pocket fold each shift the mean by less than their spread at n=3-5, so
-the per-lever differences are not statistically distinguishable here; what is consistent is that the
-best design across all of them stays 0.69 to 0.87 ipTM, below the real binder at 0.98.
+No objective lever moves the design to the real-binder bar. Eight terms added to plain STE
+(confidence, contact, scaffold-init, pTMEnergy, decoupled-STE, KL-to-natural composition,
+anti-homopolymer repetition) all keep the mean at 0.36 to 0.55, far below the real binder (0.97);
+at n=3 to 20 the between-lever differences sit within their spread. The decoupled straight-through
+estimator (arXiv 2410.13331) was swept across backward temperatures 0.25/0.5/0.75/2.0 and stays
+flat at 0.36 to 0.42, so the plateau is not a gradient-estimator artifact. It also holds on a
+second, chemically distinct target: cortisol STE designs reach 0.37 against the real cortisol
+binder at 0.86.
 
 ![levers](figures/levers.png)
 
-A late projection onto the foldable manifold (DBMol's optimize-then-project idea) does not
-rescue it either. Using LigandMPNN `score_soft` to gradient-descend a design toward a sequence
-that folds to its own frozen structure makes the held-out score worse (0.51 to 0.39), because it
-projects onto the reward-hacked structure rather than escaping it. A proper projection needs a
-sampler onto the data manifold (ADFLIP, DeFoG), not a gradient to a frozen structure.
-`scripts/project.py`.
+The projection experiment shows the mechanism, and points to the fix. Projecting a design onto its
+own reward-hacked structure (LigandMPNN `score_soft`, `scripts/project.py`) makes the held-out score
+worse (0.51 -> 0.39): the structure is the problem, so fitting a sequence to it cannot help. But
+freezing a real pocket backbone and designing a fresh random-init sequence to fit it flips the
+result. On the apx1049 crystal backbone (`scripts/rescue_backbone.py`) the designed sequences reach
+held-out ipTM 0.83 (n=8, up to 0.91), gpde 0.66, with realistic composition, near the real binder
+(0.97) and nearly double de-novo STE (0.45). Same sequence machinery; the only added ingredient is
+a real backbone.
+
+![rescue](figures/rescue.png)
 
 The reading: sequence-only gradient design plateaus because it optimizes the sequence but never
-designs the pocket, and the field's small-molecule binders come from backbone design instead.
-nise-grad is the differentiable refinement and scoring layer, not the pocket generator.
+builds the pocket. The rescue demonstrates this directly, and confirms the division of labour:
+nise-grad is a working differentiable refinement and scoring layer, but the pocket has to come from
+backbone design (as the field's small-molecule binders do). The natural next step is a forward-pass
+structure-update loop (cf. HalluDesign) that moves the backbone with Boltz's diffusion module and
+redesigns with jligandmpnn.
 
 ## Limitations
-Read the ceiling as suggestive, not established. Specifically:
-- **One target.** Every held-out result is a single ligand (apixaban). The plateau is an
-  n=1-target statement until it is reproduced on several diverse ligands.
+The plateau is well-supported; the rest is honest scope. Specifically:
+- **Two targets.** Held-out results cover apixaban and cortisol. The plateau holds on both, but
+  broader generality needs more diverse ligands.
 - **Related, not independent, judge.** Boltz-2 and Protenix-2 share architecture family and
-  training data; a design that exploits a shared bias can pass both. The ceiling may be a
-  shared-bias artifact.
-- **Single-sequence anchors.** The real/scramble/random calibration is one sequence each, and the
-  real binder's provenance (an experimentally-validated apixaban binder at this pose?) is not yet
-  documented. The gpde threshold needs several known small-molecule-binder positives.
-- **Under-powered at high budget.** The held-out plateau is n=80 at budget 25 but only n=5 at
-  budgets 100 and 250, and non-monotone; the informative points are few.
+  training data; a design that exploits a shared bias can pass both. The rescue's high score is
+  reassuring (a real binder folds well on both), but the judge is not a truly independent oracle.
+- **The rescue uses a real binder's backbone.** It proves the sequence layer works *given* a good
+  pocket (apx1049's), which localizes the bottleneck; it is not yet de-novo binder generation
+  (that needs a backbone generator, the HalluDesign-style next step).
 - **Budget is steps, not FLOPs.** An STE step is a forward + backward (~3x a fold); Best-K-of-N and
   O3 spend one forward fold per unit budget, so equal "budget" is not equal compute.
 - **In silico only.** No wet-lab validation; all claims are model-internal.
@@ -149,8 +160,11 @@ Read the ceiling as suggestive, not established. Specifically:
 - `src/nisegrad/optimize.py` STE gradient ascent (optional interface-PAE confidence term)
 - `scripts/matched_budget.py` generate designs (STE / Best-K-of-N / O3) at a fold budget
 - `scripts/protenix_score.py` held-out Protenix-2 judge (iptm, ligand ipTM, gpde, ranking)
-- `scripts/project.py` late-projection onto the foldable manifold (LigandMPNN `score_soft`,
+- `scripts/project.py` late-projection onto a frozen structure (LigandMPNN `score_soft`,
   via `src/nisegrad/boltz_ligand.py` + `ligand_mpnn_reg.py`)
+- `scripts/rescue_backbone.py` design a fresh sequence on a real (frozen) pocket backbone
+- `scripts/fold_driver.sh` phase-flagged runner (anchors / cortisol / budget / levers / dstesweep / rescue)
+- `scripts/data/anchors.json` verified crystal-binder anchors (apx1049, hcy129) with ligand SMILES
 - `scripts/*_figure.py` the figures; `scripts/data/` the scored experiment logs
 - `scripts/optimize_ste.py` a single STE run
 
