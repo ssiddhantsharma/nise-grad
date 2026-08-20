@@ -1,0 +1,132 @@
+[
+  {
+    "method": "anchor_real",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "SGGSSARIAKAKKLIYKLEKLWNARDNDGILKLFKDDAVFNLNGVPYKGKEAIKKVLESAPKAKYKITKIDIKIVGNEIIVNVDVLATGPSGFTLKVKSTITFDEDMKITSYEVNLEGS",
+    "note": "apx1049",
+    "protenix_iptm": 0.9645989060401916,
+    "protenix_lig_iptm": 0.9645989060401916,
+    "protenix_gpde": 0.3440140426158905,
+    "protenix_ranking": 0.963102388381958
+  },
+  {
+    "method": "anchor_scramble",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "EFSSSAINLDKIATGKLIGNAKGVKVYNVAARGEDPLIWYKFDKRTLLGLGKKTTYITSDSNVLKAKSTKGGIEILDDNINVEGIPNKEFEESKLIKVSDLYDVPKVMIAAKFAKVKKI",
+    "protenix_iptm": 0.2656919568777084,
+    "protenix_lig_iptm": 0.2656919568777084,
+    "protenix_gpde": 2.2483037948608398,
+    "protenix_ranking": 0.2966252684593201
+  },
+  {
+    "method": "anchor_random",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "PSKNLVDSYLEGAHDGKQLFRDCGRYWVNADEVYDMNKDRVAEQDSERAWFVDHNGNIKFQRTPRVDMEHKSYQERQQLTHDVPQASFYTIKMHCWAPNLRWHCGSKVIKYVCIMFNAV",
+    "protenix_iptm": 0.5095320999622345,
+    "protenix_lig_iptm": 0.5095320999622345,
+    "protenix_gpde": 1.9117932558059691,
+    "protenix_ranking": 0.5083823800086975
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 0,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEALFNAGDVDAVVAMMADDATMTFNGTPHTGKDAIRALLEAAPRARHTITSTEVEIVGDEVVATSVVRSTGEGGKTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.6323940572752491,
+    "protenix_iptm": 0.8816542744636535,
+    "protenix_lig_iptm": 0.8816542744636535,
+    "protenix_gpde": 0.5185965657234192,
+    "protenix_ranking": 0.890233039855957
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 1,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAQYEAAFNAGDVDAVVAMMAPDATMTFNGTPHTGKDAIRALLEAAPRARHTITSTEVEIVGDEVVATSVVVSTGEGGKTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.6258000061615301,
+    "protenix_iptm": 0.8004683375358581,
+    "protenix_lig_iptm": 0.8004683375358581,
+    "protenix_gpde": 0.7825414419174195,
+    "protenix_ranking": 0.8152514100074768
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 2,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEAAFNAGDVDAVVAMMAPDATMTFNGTPHTGKDAIRALLEAAPRARHTITSTRVEIVGDEVVATSVVVSTGEGGKTKTVVSTRTFDADGKIVRDVVTVHDL",
+    "boltz_pbind": 0.6203965978510555,
+    "protenix_iptm": 0.8390441179275513,
+    "protenix_lig_iptm": 0.8390441179275513,
+    "protenix_gpde": 0.6820387959480285,
+    "protenix_ranking": 0.8503819465637207
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 3,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAALAREKEYEAAFNAGDVDAVVAMMADDATMTFNGTPHTGKDAIRALLEAAPRARHTITSTEVEIVGDEVVVTTVVRSTGEGGVTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.6051346414260574,
+    "protenix_iptm": 0.9146917939186097,
+    "protenix_lig_iptm": 0.9146917939186097,
+    "protenix_gpde": 0.5214055299758911,
+    "protenix_ranking": 0.9170147895812988
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 4,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEAAFNAGDVDAVVAMMADDATMTFNGTPHAGKDAIRALLEAAPRARHTITSTEVRIVGDEVVATTVVRSTGEGGVTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.5713412237960573,
+    "protenix_iptm": 0.8618047833442688,
+    "protenix_lig_iptm": 0.8618047833442688,
+    "protenix_gpde": 0.5657605648040771,
+    "protenix_ranking": 0.8729311108589173
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 5,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEAAFNAGDVDAVVAMMADDATMTFNGTPHAGKDAIRALLEAAPRARHTITSTKVEIVGDEVVATSVVVSTGEGGVTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.5599368699475841,
+    "protenix_iptm": 0.7019659519195557,
+    "protenix_lig_iptm": 0.7019659519195557,
+    "protenix_gpde": 0.8051468372344971,
+    "protenix_ranking": 0.731668210029602
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 6,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEAAFNAGDVDAVVAMMADDATMTFNGTPHRGKDAIRALLEAAPRARHTITSTEVEIVGDEVVATSVVVSTGEGGKTKTVVSTRTFDADGKIVRDVVTVHDL",
+    "boltz_pbind": 0.5813297618258644,
+    "protenix_iptm": 0.866128945350647,
+    "protenix_lig_iptm": 0.866128945350647,
+    "protenix_gpde": 0.5514061331748963,
+    "protenix_ranking": 0.8747736692428589
+  },
+  {
+    "method": "rescue_realbb",
+    "seed": 7,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "GGDAAERIAAARARIAEYEALFNAGDVDAVVAMMAPDATMTFNGTPHRGKDAIRALLEAAPRARHTITSTKVEIVGDEVVATSVVVSTGEGGKTKTVVSTRTFDADGKIVRDEVTVHDL",
+    "boltz_pbind": 0.5734821085128696,
+    "protenix_iptm": 0.7524975061416626,
+    "protenix_lig_iptm": 0.7524975061416626,
+    "protenix_gpde": 0.8420128583908081,
+    "protenix_ranking": 0.7755431294441223
+  }
+]
