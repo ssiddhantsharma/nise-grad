@@ -110,4 +110,28 @@ if has levers; then
   done
 fi
 
+if has dstesweep; then
+  echo "== decoupled-STE temperature sweep (fair test; 0.5 already done) =="
+  for t in 0.25 0.75 2.0; do
+    J="$OUT/dste_${t}.json"
+    build_anchors apixaban "$J" anchor_real
+    gen_ste "$J" "$APIX_SMILES" "$APIX_LEN" "25" 5 --ste-backward-temp "$t"
+    run_protenix "$J"
+  done
+fi
+
+if has rescue; then
+  echo "== rescue: design a fresh sequence on the real apx1049 pocket backbone =="
+  REF_SEQ="$("$PY" -c "import json;print(next(r['seq'] for r in json.load(open('$ANCHORS')) if r['target']=='apixaban'))")"
+  export LIGANDMPNN_CKPT="${LIGANDMPNN_CKPT:-$HOME/siddhant/oss/ligandmpnn_v_32_010_25.pt}"
+  export LIGMPNN_MODEL_DIR="${LIGMPNN_MODEL_DIR:-$HOME/siddhant/oss/ligmpnn_ref}"
+  J="$OUT/rescue.json"
+  build_anchors apixaban "$J" anchor_real
+  for s in 0 1 2 3 4 5 6 7; do
+    CUDA_VISIBLE_DEVICES="$GPU" "$PY" "$REPO/scripts/rescue_backbone.py" \
+      --ref-seq "$REF_SEQ" --ligand "$APIX_SMILES" --seed "$s" --out "$J"
+  done
+  run_protenix "$J"
+fi
+
 echo "ALLDONE  results in $OUT/*.json"
