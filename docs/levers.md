@@ -99,9 +99,9 @@ composition_kl targets the natural amino-acid background, not a plain max-entrop
 entropy would push toward a uniform 5%-each composition, which is itself unnatural, whereas the KL
 matches real frequencies. repetition catches only adjacent (k=2) repetition, i.e. R_hpoly-style
 homopolymers, not periodic motifs (AGAG scores ~0); it is an anti-homopolymer term, not a general
-anti-repeat one. Data-side motivation in `figures/collapse.png` (optimized designs maxAA 0.21-0.24
-vs real binder 0.12, though 0.21 is biased composition, not extreme homopolymer). Implemented in
-`optimize.composition_kl` / `optimize.repetition`.
+anti-repeat one. Optimized STE designs are composition-biased (maxAA 0.21-0.24 vs a real binder's
+0.12), though that is bias, not extreme homopolymer; `figures/guided_fail.png` shows the composition
+axis directly. Implemented in `optimize.composition_kl` / `optimize.repetition`.
 
 ## Projection and the rescue
 

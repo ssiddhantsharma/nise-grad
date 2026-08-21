@@ -134,15 +134,10 @@ The decoupled-STE sweep is flat across temperatures, and the plateau is not apix
 
 ![second target, cortisol](figures/two_target.png)
 
-Two per-lever details: pTMEnergy improves the structure (gpde) but not the binding ceiling, and the
-sequence collapse the composition/repetition terms target is real and measurable; the distogram
-contact loss lifts the mean but does not break the band:
+pTMEnergy is the one lever that improves the structure (gpde) without touching the binding ceiling,
+which is the clearest single-objective view of the structure-versus-binding split:
 
 ![pTMEnergy: structure improves, binding does not](figures/ptm_energy.png)
-
-![sequence collapse: optimized designs vs real binder](figures/collapse.png)
-
-![distogram contact loss](figures/contact.png)
 
 The projection experiment shows the mechanism, and points to the fix. Projecting a design onto its
 own reward-hacked structure (LigandMPNN `score_soft`, `scripts/project.py`) makes the held-out score
