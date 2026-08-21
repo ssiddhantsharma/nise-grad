@@ -33,8 +33,10 @@ the real bar.
 
 This is differentiable guidance: backprop the oracle gradient into the sequence (cf. DRaFT, Clark et
 al. 2023). The rest of the guidance literature keeps the oracle black-box (FK-steering, DPO, O3;
-Kalisz et al. 2026) because real biological oracles are non-differentiable; ours is differentiable
-only because the oracle is a model, which is why it is cheap and also why it overfits.
+Kalisz et al. 2026), or amortizes an expensive non-differentiable oracle with active-learning search
+(LambdaZero, Korablyov et al. 2024, on the molecule side), because real biological oracles are
+non-differentiable; ours is differentiable only because the oracle is a model, which is why it is
+cheap and also why it overfits.
 
 ## Method
 A binder sequence over the 20-residue simplex is optimized by gradient ascent through a
@@ -207,6 +209,9 @@ nise-grad borrows from and builds on:
   https://www.nature.com/articles/s41586-026-10670-w
 - DRaFT (Clark et al. 2023), reward backprop through a differentiable generative model.
 - O3 / oracle budgets (Kalisz et al. 2026), the black-box guidance literature we position against.
+- LambdaZero (Korablyov et al. 2024), the inverse problem (design the molecule for a fixed protein)
+  via active learning over a docking oracle; the expensive-non-differentiable-oracle regime we
+  contrast with. https://arxiv.org/abs/2405.01616
 - DBMol (Qin et al. 2026), the molecule-side mirror; corroborates the plateau and reward-hacking
   and supplies the contact-loss idea. https://arxiv.org/abs/2607.19237
 - BindEnergyCraft (Nori et al. 2025), pTMEnergy, the energy objective that resists reward-hacking
