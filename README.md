@@ -9,27 +9,23 @@ real crystal binders, and the bottleneck is the pocket backbone, not the sequenc
 differentiable counterpart to NISE (Polizzi lab), which does the same job by gradient-free selection.
 
 nise-grad optimizes a binder sequence by gradient ascent through a differentiable Boltz-2 affinity
-oracle, with a straight-through estimator so the objective is the real discrete design and not a soft
-illusion, and screens every design on Protenix-2. Three findings:
+oracle (a straight-through estimator makes the objective the real discrete design, not a soft
+illusion) and screens every design on Protenix-2. Three findings:
 
-1. **It plateaus.** De-novo gradient tops out far below real binders and no objective lever breaks
-   the band: eight tried (affinity, contact, confidence, scaffold-init, pTMEnergy, decoupled-STE with
-   a full temperature sweep, KL-to-natural composition, anti-homopolymer repetition), across two
-   chemically distinct targets (apixaban, cortisol) and increasing budget. More optimization buys a
-   better-folded structure (gpde), not a better binder (ipTM).
-2. **The bottleneck is the pocket, not the sequence.** Freeze a real pocket backbone and design a
-   fresh sequence to fit it, and the same differentiable machinery reaches held-out 0.83 (near the
-   real binder at 0.97, nearly double de-novo at 0.45); fitting onto a reward-hacked structure
-   instead makes it worse (0.39). Structure quality decides the outcome.
+1. **It plateaus.** De-novo gradient tops out far below real binders, and nothing breaks the band:
+   eight objectives (including a decoupled-STE temperature sweep), two chemically distinct targets
+   (apixaban, cortisol), and rising budget all stay put. More optimization buys a better-folded
+   structure (gpde), not a better binder (ipTM).
+2. **The bottleneck is the pocket, not the sequence.** Give the same machinery a real pocket backbone
+   and it reaches held-out 0.83 (vs de-novo 0.45, real binder 0.97); fit onto the design's own
+   reward-hacked structure instead and it drops to 0.39. Structure quality decides the outcome.
 3. **Reusable tools.** A differentiable Boltz-2 affinity head (merged into joltz) and a
-   parity-verified JAX port of LigandMPNN (jligandmpnn).
+   parity-verified JAX LigandMPNN port (jligandmpnn).
 
-**Honest scope.** Protenix-2 is a second AF3-style model trained on largely the same data, so it is
-held-out but not orthogonal and correlated failure modes are possible. It is anchored on real
-crystal binders (apx1049 and hcy129 score high, scramble and random low), so it does discriminate
-real binding, but this is in-silico characterization, not experimental validation. Read the plateau
-as a robust, judge-consistent ceiling and the rescue as the localization of its cause. Wet lab is
-the real bar.
+**Honest scope.** Protenix-2 is a second AF3-style model on largely the same data, so it is held-out
+but not orthogonal. It is anchored on real crystal binders (which score high, scramble and random
+low), so it discriminates real binding, but this is in-silico characterization, not wet-lab
+validation.
 
 This is differentiable guidance: backprop the oracle gradient into the sequence (cf. DRaFT, Clark et
 al. 2023). The rest of the guidance literature keeps the oracle black-box (FK-steering, DPO, O3;
