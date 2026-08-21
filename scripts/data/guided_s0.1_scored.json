@@ -1,0 +1,88 @@
+[
+  {
+    "method": "anchor_real",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "SGGSSARIAKAKKLIYKLEKLWNARDNDGILKLFKDDAVFNLNGVPYKGKEAIKKVLESAPKAKYKITKIDIKIVGNEIIVNVDVLATGPSGFTLKVKSTITFDEDMKITSYEVNLEGS",
+    "note": "apx1049",
+    "protenix_iptm": 0.9656555652618408,
+    "protenix_lig_iptm": 0.9656555652618408,
+    "protenix_gpde": 0.3410114049911499,
+    "protenix_ranking": 0.9640493869781495
+  },
+  {
+    "method": "anchor_scramble",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "EFSSSAINLDKIATGKLIGNAKGVKVYNVAARGEDPLIWYKFDKRTLLGLGKKTTYITSDSNVLKAKSTKGGIEILDDNINVEGIPNKEFEESKLIKVSDLYDVPKVMIAAKFAKVKKI",
+    "protenix_iptm": 0.2653476297855377,
+    "protenix_lig_iptm": 0.2653476297855377,
+    "protenix_gpde": 2.2477721214294433,
+    "protenix_ranking": 0.2962769389152527
+  },
+  {
+    "method": "anchor_random",
+    "seed": 0,
+    "budget": 0,
+    "ligand": "COc1ccc(cc1)n2c3c(c(n2)C(=O)N)CCN(C3=O)c4ccc(cc4)N5CCCCC5=O",
+    "seq": "PSKNLVDSYLEGAHDGKQLFRDCGRYWVNADEVYDMNKDRVAEQDSERAWFVDHNGNIKFQRTPRVDMEHKSYQERQQLTHDVPQASFYTIKMHCWAPNLRWHCGSKVIKYVCIMFNAV",
+    "protenix_iptm": 0.5800962090492249,
+    "protenix_lig_iptm": 0.5800962090492249,
+    "protenix_gpde": 1.8701897859573364,
+    "protenix_ranking": 0.5679604887962342
+  },
+  {
+    "method": "guided_design",
+    "seed": 0,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "AAAAAAAAAAAAAAGAAAAAAAAAAVAAAAAAAAAAAAAEAAAAAALAAAAAAGEEAEARGGEAAKAAREAALAAGQAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAAAARAAGA",
+    "boltz_pbind": 0.7494567317578518,
+    "pocket_potential": 1.4454628229141235,
+    "protenix_iptm": 0.7107661008834839,
+    "protenix_lig_iptm": 0.7107661008834839,
+    "protenix_gpde": 0.801776111125946,
+    "protenix_ranking": 0.7088638782501221
+  },
+  {
+    "method": "guided_design",
+    "seed": 1,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAYAAALAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "boltz_pbind": 0.7767170199079341,
+    "pocket_potential": 0.3179733455181122,
+    "protenix_iptm": 0.44944589138031005,
+    "protenix_lig_iptm": 0.44944589138031005,
+    "protenix_gpde": 1.8795477867126464,
+    "protenix_ranking": 0.4453976094722748
+  },
+  {
+    "method": "guided_design",
+    "seed": 2,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "AAAAAAAAAAAAAAAGAAAAAAAAAAAAAAGAAAAAAAAAAVAAAAAAAAAAEAAARAGDAAGAVAGAAAAEAAAAAAAAAAAAGAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA",
+    "boltz_pbind": 0.7515484269787738,
+    "pocket_potential": 0.8921035528182983,
+    "protenix_iptm": 0.8065683603286743,
+    "protenix_lig_iptm": 0.8065683603286743,
+    "protenix_gpde": 0.6924963593482971,
+    "protenix_ranking": 0.7955630779266357
+  },
+  {
+    "method": "guided_design",
+    "seed": 3,
+    "budget": 60,
+    "ligand": "COC1=CC=C(C=C1)N2C3=C(CCN(C3=O)C4=CC=C(C=C4)N5CCCCC5=O)C(=N2)C(=O)N",
+    "seq": "AAEAAAAALRAEGEAALAAAEAEAAALRAAGAAAAAAAAAAGAAAAAAGEAAAAALAAADPDNAAAVAAAQAGAAARAAEAAAAGAAAAAAAEAAAAAARAAGEAAKAALEAAAEAALAA",
+    "boltz_pbind": 0.7650261699584596,
+    "pocket_potential": 0.536434531211853,
+    "protenix_iptm": 0.8216823816299439,
+    "protenix_lig_iptm": 0.8216823816299439,
+    "protenix_gpde": 0.5427338600158691,
+    "protenix_ranking": 0.8224624514579773
+  }
+]
