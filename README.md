@@ -92,14 +92,14 @@ seq  = soft + stop_gradient(hard - soft)   # forward = hard, backward = soft
 ```
 
 The value being maximized is now the discrete design's P(bind), while the logits still get a
-gradient.
+gradient (Figure 1).
 
 ![gradient reality](figures/gradient_reality.png)
 
-*30aa binder, recycling=3, num_sampling_steps=25, 3 seeds each. Naive soft P(bind) reaches ~0.9
-but the discrete design scores 0.33 to 0.41 and is degenerate. STE optimizes the discrete design
-directly: 0.44 to 0.73 with realistic composition, well-folded (119/119 backbone bonds, pLDDT
-~0.8).* `scripts/optimize_ste.py`.
+*Figure 1. STE optimizes the real discrete design, not a soft illusion. 30aa binder, recycling=3,
+num_sampling_steps=25, 3 seeds. Naive soft P(bind) reaches ~0.9 but its discrete argmax refolds to
+0.33 to 0.41 and is degenerate; STE reaches 0.44 to 0.73 with realistic composition, well-folded
+(119/119 backbone bonds, pLDDT ~0.8). `scripts/optimize_ste.py`.*
 
 ## The held-out judge, and the ceiling
 STE closes the soft-to-discrete gap within Boltz, but it does not by itself make real binders. A
@@ -114,32 +114,46 @@ scores 0.97 / gpde 0.34 and cortisol hcy129 (PDB 8UQF) 0.86 / gpde 0.62, while s
 sit at 0.24 to 0.51 / gpde 1.9 to 2.7. As the optimization budget rises (25/100/250, n=20 each) the
 Boltz proxy climbs but the held-out ipTM does not follow it up (0.47 -> 0.43 -> 0.36) even as gpde
 improves (1.60 -> 1.19): more optimization buys a more confidently folded structure, not a better
-binder. The same picture DBMol found on the molecule side.
+binder (Figure 2). The same picture DBMol found on the molecule side.
 
 ![plateau](figures/plateau.png)
 
-No objective lever moves the design to the real-binder bar. Eight terms added to plain STE
-(confidence, contact, scaffold-init, pTMEnergy, decoupled-STE, KL-to-natural composition,
-anti-homopolymer repetition) all keep the mean at 0.36 to 0.55, far below the real binder (0.97);
-at n=3 to 20 the between-lever differences sit within their spread. The decoupled straight-through
-estimator (arXiv 2410.13331) was swept across backward temperatures 0.25/0.5/0.75/2.0 and stays
-flat at 0.36 to 0.42, so the plateau is not a gradient-estimator artifact. It also holds on a
-second, chemically distinct target: cortisol STE designs reach 0.37 against the real cortisol
-binder at 0.86.
+*Figure 2. More optimization improves structure, not held-out binding. Plain STE on apixaban at
+budgets 25/100/250 (n=20 each): the Boltz proxy climbs while held-out ipTM does not, even as gpde
+falls. Data: budget_scored.json.*
+
+No objective lever moves the design to the real-binder bar (Figure 3). Eight terms added to plain
+STE (confidence, contact, scaffold-init, pTMEnergy, decoupled-STE, KL-to-natural composition,
+anti-homopolymer repetition) all keep the mean at 0.36 to 0.55, far below the real binder (0.97); at
+n=3 to 20 the between-lever differences sit within their spread.
 
 ![levers](figures/levers.png)
 
-The decoupled-STE sweep is flat across temperatures, and the plateau is not apixaban-specific
-(cortisol STE designs vs the real cortisol binder):
+*Figure 3. No objective lever breaks the ceiling. Held-out ipTM per objective added to plain STE
+(eight levers); every one stays below the real binder (0.97), differences within noise at n=3 to 20.*
+
+The plateau is not a gradient-estimator artifact and not apixaban-specific. The decoupled-STE
+estimator, swept across backward temperatures, stays flat (Figure 4), and a second chemically
+distinct target, cortisol, plateaus the same way against its real binder (Figure 5).
 
 ![decoupled-STE temperature sweep](figures/dste_sweep.png)
 
+*Figure 4. The decoupled straight-through estimator (arXiv 2410.13331) does not help at any backward
+temperature (0.25/0.5/0.75/2.0), all near plain STE and far below the real binder. Data:
+dste_*_scored.json.*
+
 ![second target, cortisol](figures/two_target.png)
 
-pTMEnergy is the one lever that improves the structure (gpde) without touching the binding ceiling,
-which is the clearest single-objective view of the structure-versus-binding split:
+*Figure 5. The plateau generalizes: cortisol STE designs (0.37) sit far below the real cortisol
+binder (0.86), as on apixaban. Data: cortisol_scored.json, cort_anchors_scored.json.*
+
+pTMEnergy is the one lever that improves the structure (gpde) without moving the binding ceiling,
+the clearest single-objective view of the structure-versus-binding split (Figure 6).
 
 ![pTMEnergy: structure improves, binding does not](figures/ptm_energy.png)
+
+*Figure 6. pTMEnergy pulls gpde toward the real binder but leaves ipTM on the plateau: the affinity
+and pTMEnergy designs vs the real binder in (ipTM, gpde) space.*
 
 The projection experiment shows the mechanism, and points to the fix. Projecting a design onto its
 own reward-hacked structure (LigandMPNN `score_soft`, `scripts/project.py`) makes the held-out score
@@ -148,9 +162,14 @@ freezing a real pocket backbone and designing a fresh random-init sequence to fi
 result. On the apx1049 crystal backbone (`scripts/rescue_backbone.py`) the designed sequences reach
 held-out ipTM 0.83 (n=8, up to 0.91), gpde 0.66, with realistic composition, near the real binder
 (0.97) and nearly double de-novo STE (0.45). Same sequence machinery; the only added ingredient is
-a real backbone.
+a real backbone (Figure 7).
 
 ![rescue](figures/rescue.png)
+
+*Figure 7. Structure quality is the bottleneck. Same sequence machinery, three targets: de-novo (no
+backbone, 0.45), fitting onto the design's own reward-hacked structure (0.39), and fitting a fresh
+sequence to a real pocket backbone (0.83, near the real binder). Data: budget / apix_projector /
+rescue_scored.json.*
 
 The reading: sequence-only gradient design plateaus because it optimizes the sequence but never
 builds the pocket. The rescue demonstrates this directly, and confirms the division of labour:
@@ -168,9 +187,14 @@ single residue (poly-A): the poly-A-conditioned guided structure inverse-folds b
 catch is that poly-A scores a moderate held-out ipTM (0.7 to 0.8, well above a scramble's 0.27)
 because it folds to a stable low-complexity structure near the ligand. So held-out ipTM alone is
 gamed by poly-A, and only the composition check separates it from a real design; the rescue (real
-backbone, ipTM 0.83 at composition 0.17) is the only route that is both high-ipTM and designable.
+backbone, ipTM 0.83 at composition 0.17) is the only route that is both high-ipTM and designable
+(Figure 8).
 
 ![held-out ipTM alone is fooled by poly-A; composition exposes it](figures/guided_fail.png)
+
+*Figure 8. Held-out ipTM alone is gamed by poly-A; composition exposes it. ipTM vs most-common-AA
+fraction: guided-diffusion designs reach high ipTM but are poly-A (right, not designable), while the
+rescue and real binder are high-ipTM and designable (left).*
 
 This closes the argument: gradient guidance on a single GPU cannot build a foldable pocket from
 scratch (the co-adapting fold-backprop version OOMs an A6000, it needs an A100), so the pocket must
