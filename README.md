@@ -3,34 +3,38 @@
 [![CI](https://github.com/ssiddhantsharma/nise-grad/actions/workflows/ci.yml/badge.svg)](https://github.com/ssiddhantsharma/nise-grad/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Gradient design of small-molecule-binding proteins. The binder sequence is optimized directly
-through a differentiable Boltz-2 affinity oracle, and every design is screened on a second,
-architecturally-related model (Protenix-2). Boltz-2 and Protenix-2 are both AF3-style co-folders
-trained on largely the same PDB/BioLiP data, so the judge is a held-out model but not an
-independent one: correlated failure modes are expected, and a plateau seen through it may be a
-shared-bias ceiling rather than a fundamental one. A gradient counterpart to NISE (Polizzi lab,
-https://www.nature.com/articles/s41586-026-10670-w), which does the same job by gradient-free
-selection. Not a fork.
+**Does making the oracle differentiable help design small-molecule binders?** A controlled study.
+Gradient hallucination through a differentiable Boltz-2 oracle reward-hacks and plateaus far below
+real crystal binders, and the bottleneck is the pocket backbone, not the sequence. The
+differentiable counterpart to NISE (Polizzi lab), which does the same job by gradient-free selection.
 
-This is differentiable guidance: backprop the oracle gradient into the sequence (cf. DRaFT,
-Clark et al. 2023). The rest of the guidance literature keeps the oracle black-box (FK-steering,
-DPO, O3; Kalisz et al. 2026) because real biological oracles are non-differentiable. Ours is
-differentiable only because the oracle is a model, which is why it is cheap and also why it
-overfits.
+nise-grad optimizes a binder sequence by gradient ascent through a differentiable Boltz-2 affinity
+oracle, with a straight-through estimator so the objective is the real discrete design and not a soft
+illusion, and screens every design on Protenix-2. Three findings:
 
-**Status: active.** Optimizing the *soft* sequence maximizes a fiction: the naive soft optimum
-sits between amino acids and its argmax refolds to degenerate poly-X at P(bind) ~0.9. A
-straight-through estimator closes that soft-to-discrete gap, so STE optimizes the real discrete
-design's P(bind); the STE designs have realistic (if composition-biased) sequences, not poly-X. But
-STE still overfits Boltz, so the optimized oracle cannot be trusted on its own; filter on Protenix-2,
-anchored by real crystal binders (apixaban apx1049 0.97 / gpde 0.34, cortisol hcy129 0.86 / gpde
-0.62) vs scramble/random at 0.24 to 0.51 / gpde 1.9 to 2.7. De-novo gradient plateaus below the real
-binder and no objective lever (eight tried, including a decoupled-STE temperature sweep) or second
-target breaks that band. The bottleneck is the pocket, not the sequence: freezing a real backbone
-and designing a fresh sequence to fit it reaches held-out 0.83, nearly double de-novo (0.45) and
-near the real binder (0.97). This mirrors DBMol (Qin et al. 2026) on the molecule side. Direction:
-gradient design as a differentiable refinement layer over a designed backbone; wet lab is the real
-bar.
+1. **It plateaus.** De-novo gradient tops out far below real binders and no objective lever breaks
+   the band: eight tried (affinity, contact, confidence, scaffold-init, pTMEnergy, decoupled-STE with
+   a full temperature sweep, KL-to-natural composition, anti-homopolymer repetition), across two
+   chemically distinct targets (apixaban, cortisol) and increasing budget. More optimization buys a
+   better-folded structure (gpde), not a better binder (ipTM).
+2. **The bottleneck is the pocket, not the sequence.** Freeze a real pocket backbone and design a
+   fresh sequence to fit it, and the same differentiable machinery reaches held-out 0.83 (near the
+   real binder at 0.97, nearly double de-novo at 0.45); fitting onto a reward-hacked structure
+   instead makes it worse (0.39). Structure quality decides the outcome.
+3. **Reusable tools.** A differentiable Boltz-2 affinity head (merged into joltz) and a
+   parity-verified JAX port of LigandMPNN (jligandmpnn).
+
+**Honest scope.** Protenix-2 is a second AF3-style model trained on largely the same data, so it is
+held-out but not orthogonal and correlated failure modes are possible. It is anchored on real
+crystal binders (apx1049 and hcy129 score high, scramble and random low), so it does discriminate
+real binding, but this is in-silico characterization, not experimental validation. Read the plateau
+as a robust, judge-consistent ceiling and the rescue as the localization of its cause. Wet lab is
+the real bar.
+
+This is differentiable guidance: backprop the oracle gradient into the sequence (cf. DRaFT, Clark et
+al. 2023). The rest of the guidance literature keeps the oracle black-box (FK-steering, DPO, O3;
+Kalisz et al. 2026) because real biological oracles are non-differentiable; ours is differentiable
+only because the oracle is a model, which is why it is cheap and also why it overfits.
 
 ## Method
 A binder sequence over the 20-residue simplex is optimized by gradient ascent through a
