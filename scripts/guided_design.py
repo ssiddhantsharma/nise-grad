@@ -18,7 +18,7 @@ from mosaic.losses.boltz2 import boltz2_trunk, set_binder_sequence
 
 from nisegrad.boltz_ligand import build_boltz_regularizer
 from nisegrad.guided_diffusion import atom_masks, guided_sample, pocket_potential
-from nisegrad.optimize import AA_ORDER, decode, sigmoid
+from nisegrad.optimize import decode, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
@@ -39,10 +39,10 @@ def guided_backbone(oracle, feats, scale, steps, key):
     init_emb, trunk = boltz2_trunk(oracle.model, feats, recycling_steps=3, deterministic=True, key=key)
     q, c, to_keys, aeb, adb, ttb = oracle.model.diffusion_conditioning(
         trunk.s, trunk.z, init_emb.relative_position_encoding, feats)
-    cond = dict(
-        s_trunk=trunk.s, s_inputs=init_emb.s_inputs, feats=feats, multiplicity=1,
-        diffusion_conditioning={"q": q, "c": c, "to_keys": to_keys, "atom_enc_bias": aeb,
-                                "atom_dec_bias": adb, "token_trans_bias": ttb})
+    cond = {
+        "s_trunk": trunk.s, "s_inputs": init_emb.s_inputs, "feats": feats, "multiplicity": 1,
+        "diffusion_conditioning": {"q": q, "c": c, "to_keys": to_keys, "atom_enc_bias": aeb,
+                                "atom_dec_bias": adb, "token_trans_bias": ttb}}
     bmask, lmask = atom_masks(feats)
     pot = lambda x: pocket_potential(x, bmask, lmask)
     coords = guided_sample(oracle.model.structure_module, feats["atom_pad_mask"], steps,
@@ -81,7 +81,7 @@ def main():
     state = opt.init(logits)
     nll_fn = jax.jit(jax.value_and_grad(lambda x: reg(jax.nn.softmax(x, -1), frozen, key)[0]))
     for i in range(a.design_steps):
-        nll, grad = nll_fn(logits)
+        _nll, grad = nll_fn(logits)
         updates, state = opt.update(grad, state)
         logits = optax.apply_updates(logits, updates)
     seq = decode(logits)

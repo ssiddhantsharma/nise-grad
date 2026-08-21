@@ -30,9 +30,9 @@ def protenix(J):
     subprocess.run([PY, str(REPO / "scripts/protenix_score.py"), "build", "--in", str(J),
                     "--input-json", str(OUT / f"{name}_in.json")], check=True)
     subprocess.run(["bash", "-c",
-                    f'cd "{os.environ["PROTENIX_DIR"]}" && CUDA_VISIBLE_DEVICES={GPU} .venv/bin/protenix '
+                    (f'cd "{os.environ["PROTENIX_DIR"]}" && CUDA_VISIBLE_DEVICES={GPU} .venv/bin/protenix '
                     f'pred -i {OUT}/{name}_in.json -o {OUT}/{name}_out -s 101 -n protenix-v2 '
-                    f'--use_msa false --use_default_params true'], check=True)
+                    f'--use_msa false --use_default_params true')], check=True)
     subprocess.run([PY, str(REPO / "scripts/protenix_score.py"), "parse", "--in", str(J),
                     "--outdir", str(OUT / f"{name}_out"), "--seed", "101"], check=True)
 

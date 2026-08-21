@@ -14,8 +14,10 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
+import functools
+import operator
+
 import matplotlib.pyplot as plt
-import numpy as np
 
 DATA = Path(__file__).resolve().parent / "data"
 DENOVO, GUIDED, RESCUE, REAL = "#999999", "#D55E00", "#0072B2", "#009E73"
@@ -36,7 +38,7 @@ def pts(file, method, budget=None):
 
 def main():
     denovo = pts("budget_scored.json", "ste", 25)
-    guided = sum((pts(f"guided_s{s}_scored.json", "guided_design") for s in ["0.05", "0.1", "0.2", "0.3"]), [])
+    guided = functools.reduce(operator.iadd, (pts(f"guided_s{s}_scored.json", "guided_design") for s in ["0.05", "0.1", "0.2", "0.3"]), [])
     rescue = pts("rescue_scored.json", "rescue_realbb")
     real = pts("apix_anchors_scored.json", "anchor_real")
 

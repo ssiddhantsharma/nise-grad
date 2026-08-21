@@ -20,7 +20,14 @@ import optax
 from mosaic.losses.structure_prediction import BinderTargetContact
 
 from nisegrad.optimize import (
-    AA_ORDER, composition_kl, decode, foldability, interface_pae, ptm_energy, repetition, sigmoid,
+    AA_ORDER,
+    composition_kl,
+    decode,
+    foldability,
+    interface_pae,
+    ptm_energy,
+    repetition,
+    sigmoid,
 )
 from nisegrad.oracle import PbindOracle
 

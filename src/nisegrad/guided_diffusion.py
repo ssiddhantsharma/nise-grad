@@ -77,8 +77,14 @@ def guided_forward_from_trunk(model, features, initial_embedding, trunk_state, *
                               num_sampling_steps, guidance_fn, guidance_scale, key):
     """boltz2_forward_from_trunk with guided_sample swapped in; returns a full StructureModelOutput
     (so ifsr and the pae/plddt binding terms work on the guided structure). Mirrors mosaic; keep in sync."""
-    from mosaic.losses.boltz2 import (BOLTZ2_DISTOGRAM_BINS, PAE_BINS, StructureModelOutput,
-                                      _BOLTZ_TOKATOM_TO_ATOM37, ref_atoms, scatter_atom37)
+    from mosaic.losses.boltz2 import (
+        _BOLTZ_TOKATOM_TO_ATOM37,
+        BOLTZ2_DISTOGRAM_BINS,
+        PAE_BINS,
+        StructureModelOutput,
+        ref_atoms,
+        scatter_atom37,
+    )
 
     distogram_logits = model.distogram_module(trunk_state.z)[0, :, :, 0, :]
     q, c, to_keys, aeb, adb, ttb = model.diffusion_conditioning(
