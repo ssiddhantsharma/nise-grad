@@ -9,8 +9,12 @@ Its gpde and ranking_score (anchor-validated: a real binder scores gpde ~0.3, sc
 
 import argparse
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
+
+# maxAA above this = poly-X: a low-complexity sequence that games held-out ipTM (poly-A folds to a
+# stable blob near the ligand and scores ~0.7) without being a designable protein. Disqualifier.
+POLY_X = 0.35
 
 
 def build(rows, out):
@@ -27,8 +31,13 @@ def _mean(xs):
     return sum(xs) / len(xs) if xs else None
 
 
+def _maxaa(seq):
+    return max(Counter(seq).values()) / len(seq) if seq else None
+
+
 def parse(rows, outdir, seed):
     for i, r in enumerate(rows):
+        r["maxaa"] = _maxaa(r.get("seq"))          # composition guard vs poly-X gaming
         # protenix writes N diffusion samples per seed; average across them
         hits = sorted(Path(outdir).glob(
             f"d{i}/seed_{seed}/predictions/d{i}_summary_confidence_sample_*.json"))
@@ -55,19 +64,24 @@ def parse(rows, outdir, seed):
     for r in rows:
         if r.get("protenix_iptm") is None:
             continue
-        for k in ("protenix_iptm", "protenix_lig_iptm", "protenix_gpde", "protenix_ranking"):
+        for k in ("protenix_iptm", "protenix_lig_iptm", "protenix_gpde", "protenix_ranking", "maxaa"):
             if r.get(k) is not None:
                 agg[key(r)][k].append(r[k])
     def fmt(a, k):
         return f"{sum(a[k]) / len(a[k]):.2f}" if a.get(k) else "  -"
 
     print("\n== Protenix-v2 held-out (mean per group) ==", flush=True)
-    print(f"{'group':<20} {'iptm':>6} {'lig_iptm':>9} {'gpde':>6} {'rank':>6}  n", flush=True)
+    print(f"{'group':<20} {'iptm':>6} {'lig_iptm':>9} {'gpde':>6} {'rank':>6} {'maxAA':>6}  n", flush=True)
     for g in sorted(agg):
         a = agg[g]
         n = len(a.get("protenix_iptm", []))
+        mean_maxaa = sum(a["maxaa"]) / len(a["maxaa"]) if a.get("maxaa") else None
+        flag = "  poly-X (disqualified)" if mean_maxaa is not None and mean_maxaa > POLY_X else ""
         print(f"{g:<20} {fmt(a, 'protenix_iptm'):>6} {fmt(a, 'protenix_lig_iptm'):>9} "
-              f"{fmt(a, 'protenix_gpde'):>6} {fmt(a, 'protenix_ranking'):>6}  {n}", flush=True)
+              f"{fmt(a, 'protenix_gpde'):>6} {fmt(a, 'protenix_ranking'):>6} {fmt(a, 'maxaa'):>6}  {n}{flag}",
+              flush=True)
+    print(f"(maxAA = most-common-residue fraction; > {POLY_X} = poly-X, disqualified: a high held-out "
+          "ipTM there is gaming, not binding)", flush=True)
 
 
 def main():
