@@ -162,6 +162,23 @@ backbone design (as the field's small-molecule binders do). The natural next ste
 structure-update loop (cf. HalluDesign) that moves the backbone with Boltz's diffusion module and
 redesigns with jligandmpnn.
 
+## Trying to build the pocket with gradient-guided diffusion
+The obvious next move is to make the gradient shape the structure, not only the sequence: guide
+Boltz's diffusion sampler with a geometric burial potential (`src/nisegrad/guided_diffusion.py`) so a
+pocket forms around the ligand as it denoises, then inverse-fold it. It does not work, and the way it
+fails is the point. Across guidance scales 0.05 to 0.3 the designed sequences are 78 to 90 percent a
+single residue (poly-A): the poly-A-conditioned guided structure inverse-folds back to poly-A. The
+catch is that poly-A scores a moderate held-out ipTM (0.7 to 0.8, well above a scramble's 0.27)
+because it folds to a stable low-complexity structure near the ligand. So held-out ipTM alone is
+gamed by poly-A, and only the composition check separates it from a real design; the rescue (real
+backbone, ipTM 0.83 at composition 0.17) is the only route that is both high-ipTM and designable.
+
+![held-out ipTM alone is fooled by poly-A; composition exposes it](figures/guided_fail.png)
+
+This closes the argument: gradient guidance on a single GPU cannot build a foldable pocket from
+scratch (the co-adapting fold-backprop version OOMs an A6000, it needs an A100), so the pocket must
+come from a real backbone generator, after which the sequence layer works.
+
 ## Limitations
 The plateau is well-supported; the rest is honest scope. Specifically:
 - **Two targets.** Held-out results cover apixaban and cortisol. The plateau holds on both, but
