@@ -196,10 +196,38 @@ This closes the argument: gradient guidance on a single GPU cannot build a folda
 scratch (the co-adapting fold-backprop version OOMs an A6000, it needs an A100), so the pocket must
 come from a real backbone generator, after which the sequence layer works.
 
+## The held-out judge tracks measured affinity
+The ceiling only means something if the judge is real. Across 37 published de-novo protein binders
+for 14 small molecules (KD from ITC, SPR, MST, and fluorescence titration), the held-out Protenix
+score moves with experiment: ipTM rises and gpde falls as measured affinity increases (Spearman rho
++0.48 and -0.44, n=37), and within the PARP set (one scaffold, four inhibitors) gpde ranks the
+series. The correlation is moderate, not tight, and it uses other groups' wet-lab numbers, so the
+judge is grounded in measurement, not only in telling designs from scrambles (Figure 9).
+
+![the held-out judge tracks measured affinity](figures/kd_correlation.png)
+
+*Figure 9. The held-out judge tracks measured KD. Protenix gpde (left, lower is better) and ipTM
+(right) against experimental pKd for 37 de-novo binders across 14 ligands, Spearman rho annotated.
+The PARP set (orange, one scaffold) is ranked by gpde.*
+
+## The plateau generalizes across the ligand panel
+Extending from two targets to fourteen (a steroid, four PARP inhibitors, four camptothecins, two
+DFHBI fluorogens, an NDI, apixaban) tells the same story on every one. Each ligand is anchored by a
+published crystal binder; STE de-novo design (8 seeds) is scored on held-out Protenix. Real anchors
+average ipTM 0.93, the best composition-passing STE design averages 0.66, a 0.27 gap, and STE does
+not reach the real binder on any of the 14 ligands. The best designs pass the composition guard
+(most-common-AA fraction < 0.35), so this is a capability ceiling, not poly-X gaming (Figure 10).
+
+![the plateau generalizes across 14 ligands](figures/per_ligand_plateau.png)
+
+*Figure 10. Gradient design plateaus below the real binder on all 14 ligands. Held-out Protenix ipTM
+per ligand: real crystal binder (star) vs best composition-passing STE de-novo design (dot), the
+connector is the gap. 0/14 designs reach the real binder.*
+
 ## Limitations
 The plateau is well-supported; the rest is honest scope. Specifically:
-- **Two targets.** Held-out results cover apixaban and cortisol. The plateau holds on both, but
-  broader generality needs more diverse ligands.
+- **Panel, not proteome.** Held-out results span 14 chemically diverse ligands and the plateau holds
+  on every one, but this is a curated panel of anchorable crystal binders, not an unbiased sample.
 - **Related, not independent, judge.** Boltz-2 and Protenix-2 share architecture family and
   training data; a design that exploits a shared bias can pass both. The rescue's high score is
   reassuring (a real binder folds well on both), but the judge is not a truly independent oracle.
