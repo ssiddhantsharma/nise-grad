@@ -8,7 +8,7 @@ Gradient ascent through a differentiable Boltz-2 oracle reward-hacks and plateau
 binders, and the bottleneck is the pocket backbone, not the sequence. The differentiable counterpart to
 NISE (Polizzi lab), which does the same job by gradient-free selection.
 
-![real binder buries the ligand; the de novo design leaves it on a shallow surface](figures/pocket_pose.png)
+![The gradient folds a protein but forgets the pocket: the real binder buries the ligand, the de-novo design leaves it exposed](figures/hero.png)
 
 - **It plateaus.** Across 14 ligands the best de novo design reaches held-out interface pTM 0.66 against
   0.93 for the real binders, and it beats gradient-free search (0.51 / 0.48) yet stalls at the same
