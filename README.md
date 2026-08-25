@@ -19,7 +19,7 @@ NISE (Polizzi lab), which does the same job by gradient-free selection.
   parity-checked JAX LigandMPNN port ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)).
 
 The method, the controlled study, and a de novo protein-small-molecule affinity benchmark are written up
-in the companion paper (under review); this repo holds the code and the scored data behind every number.
+in the workshop paper (under review); this repo holds the code and the scored data behind every number.
 
 ## Install
 ```
