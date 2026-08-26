@@ -29,9 +29,14 @@ for line in "${LINES[@]}"; do
   cd "$CF"
   export DYE="$slug" DYE_SMILES="$smi" LIG_RESNAME="$rescode" RUN_NAME="rfd3_$slug" \
          BINDER_LEN="$L" N_DESIGNS="$ND" N_SEQS="$NS" ALLOWED_GPUS="$GPU" CUDA_VISIBLE_DEVICES="$GPU" \
-         HBOND_LIGAND_ATOM= FOLD_CLOSED=0
+         FOLD_CLOSED=0
   source paths.sh
-  python scripts/ligand_prep.py || { echo "PREP FAIL $slug"; continue; }
+  PREP=$(python scripts/ligand_prep.py) || { echo "PREP FAIL $slug"; continue; }
+  echo "$PREP"
+  # steer H-bonds to this ligand's actual oxygens (up to 3); 'none' = burial only (no oxygens)
+  OX=$(echo "$PREP" | grep -oE "'O[0-9]+'" | tr -d "'" | head -3 | paste -sd, -)
+  export HBOND_LIGAND_ATOM="${OX:-none}"
+  echo "hbond acceptors: $HBOND_LIGAND_ATOM"
   bash scripts/rfd3.sh          || { echo "RFD3 FAIL $slug"; continue; }
   bash scripts/ligandmpnn.sh    || { echo "MPNN FAIL $slug"; continue; }
   RUN=~/siddhant/chemistry_fap/runs/rfd3_$slug

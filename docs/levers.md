@@ -93,11 +93,14 @@ Does the gradient beat gradient-free search? At a matched fold budget of 25, ove
 gradient carries real signal, yet all three plateau far below the real binders (0.93): the ceiling is
 shared across optimizers, so the optimizer is not the bottleneck.
 
-## RFdiffusion3 backbone arm (`scripts/run2_rfd3_arm.sh`)
-The constructive control. Generate 40 all-atom RFdiffusion3 backbones that bury apixaban, inverse-fold
-each with LigandMPNN (4 sequences), score on the held-out judge. Verified: mean ipTM 0.75 (0.86 for the
-best sequence per backbone), approaching the real-backbone rescue (0.83) and far above the sequence-only
-plateau (0.45). A backbone generator supplies the pocket the sequence gradient cannot build.
+## RFdiffusion3 backbone arm (`scripts/panel_rfd3.sh`, all 14 ligands)
+The constructive control, across the whole panel. Per ligand: generate 40 all-atom RFdiffusion3 backbones
+that bury it (H-bond acceptors steered to the ligand's oxygens; burial-only when it has none), inverse-fold
+each with LigandMPNN (4 sequences), score on the held-out judge. Verified on all 14 ligands:
+per-backbone-best interface pTM **0.89** on average (mean over ligands), near the real crystal binders
+(0.93) and far above the sequence-gradient plateau (0.66) -- every ligand lifted from plateau to ~real.
+A backbone generator supplies the pocket the sequence gradient cannot build. Per-ligand scored designs in
+`scripts/data/rfd3_panel/`.
 
 ## Not implemented (candidate next paradigm)
 
