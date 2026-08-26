@@ -17,7 +17,7 @@ Scramble and random sequences score 0.24-0.42, so the judge separates real binde
 SMILES are the PDB component canonical strings, verified by InChIKey (GG2 QNZCBYKSOIHPEH; HCY
 JYGXADMDTFJGBT-VWUMJDOOSA-N, full steroid stereochemistry). Cortisol (a steroid) is chemically distinct
 from apixaban, a second held-out target. These binders come from NTF2-family backbone hallucination +
-ProteinMPNN, the pocket/backbone-design paradigm this study argues sequence-only gradient cannot reach.
+ProteinMPNN, the pocket/backbone-design approach this study argues sequence-only gradient cannot reach.
 
 ## Objectives
 
@@ -102,7 +102,7 @@ per-backbone-best interface pTM **0.89** on average (mean over ligands), near th
 A backbone generator supplies the pocket the sequence gradient cannot build. Per-ligand scored designs in
 `scripts/data/rfd3_panel/`.
 
-## Not implemented (candidate next paradigm)
+## Not implemented (candidate next approach)
 
 ### HalluDesign
 bioRxiv 2025.11.08.686881. Forward-pass, fine-tune-free sequence-structure co-optimization: alternate an

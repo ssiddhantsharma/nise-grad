@@ -14,12 +14,13 @@ NISE (Polizzi lab), which does the same job by gradient-free selection.
   0.93 for the real binders, and it beats gradient-free search (0.51 / 0.48) yet stalls at the same
   ceiling: the optimiser is not the limit.
 - **The pocket is the limit.** Give the sequence layer a backbone, real or RFdiffusion3-generated, and it
-  reaches ~0.8; the gradient alone cannot build a foldable pocket, collapsing to poly-alanine.
+  reaches 0.83 on a real backbone and 0.89 on RFdiffusion3 backbones across the panel, near the real
+  binders. The gradient alone cannot build a foldable pocket and collapses to poly-alanine.
 - **Reusable tooling.** A differentiable Boltz-2 affinity head (contributed to joltz) and a
   parity-checked JAX LigandMPNN port ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)).
 
 The method, the controlled study, and a de novo protein-small-molecule affinity benchmark are written up
-in the workshop paper (under review); this repo holds the code and the scored data behind every number.
+in the workshop paper (under review). This repo holds the code and the scored data behind every number.
 
 ## Install
 ```
