@@ -54,6 +54,7 @@ def main():
     ap.add_argument("--nseeds", type=int, default=10)
     ap.add_argument("--seed-start", type=int, default=0, help="first STE seed (for best-of-N extensions)")
     ap.add_argument("--lig-names", default=None, help="comma-separated ligand_name slugs to select")
+    ap.add_argument("--no-score", action="store_true", help="generate STE sequences only; score elsewhere")
     a = ap.parse_args()
 
     if a.mode == "kdval":
@@ -79,7 +80,8 @@ def main():
                             "--checkpoints", "25", "--binder-len", str(len(p["anchor_seq"])),
                             "--ligand", p["ligand"], "--out", str(J)],
                            env={**os.environ, "CUDA_VISIBLE_DEVICES": GPU}, check=True)
-        protenix(J)
+        if not a.no_score:
+            protenix(J)
         print(f"LIGAND_DONE {p['ligand_name']}", flush=True)
     print("LIGANDS_DONE", flush=True)
 
