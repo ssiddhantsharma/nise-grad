@@ -52,6 +52,8 @@ def main():
     ap.add_argument("--lig-start", type=int, default=0)
     ap.add_argument("--lig-end", type=int, default=999)
     ap.add_argument("--nseeds", type=int, default=10)
+    ap.add_argument("--seed-start", type=int, default=0, help="first STE seed (for best-of-N extensions)")
+    ap.add_argument("--lig-names", default=None, help="comma-separated ligand_name slugs to select")
     a = ap.parse_args()
 
     if a.mode == "kdval":
@@ -66,10 +68,13 @@ def main():
         return
 
     panel = json.loads((DATA / "ligand_panel.json").read_text())[a.lig_start:a.lig_end]
+    if a.lig_names:
+        want = set(a.lig_names.split(","))
+        panel = [p for p in panel if slug(p["ligand_name"]) in want]
     for p in panel:
         J = OUT / f"lig_{slug(p['ligand_name'])}.json"
         J.write_text(json.dumps(anchor_rows(p["anchor_seq"], p["ligand"], p["anchor_name"]), indent=2))
-        for s in range(a.nseeds):
+        for s in range(a.seed_start, a.seed_start + a.nseeds):
             subprocess.run([PY, str(REPO / "scripts/matched_budget.py"), "--method", "ste", "--seed", str(s),
                             "--checkpoints", "25", "--binder-len", str(len(p["anchor_seq"])),
                             "--ligand", p["ligand"], "--out", str(J)],
