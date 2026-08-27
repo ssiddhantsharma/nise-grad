@@ -42,7 +42,7 @@ Checkpoints in `~/.boltz` (or set `NISEGRAD_BOLTZ_CACHE`): `boltz2_conf.ckpt`, `
 - `scripts/data/` the scored experiment logs behind every number
 
 ## Credit
-Builds on NISE (Polizzi lab), DRaFT (Clark et al. 2023), DBMol (Qin et al. 2026), BindEnergyCraft (Nori
+Builds on NISE (Polizzi lab), DBMol (Qin et al. 2026), BindEnergyCraft (Nori
 et al. 2025), LambdaZero (Korablyov et al. 2024), LigandMPNN (Dauparas et al.), and RoseTTAFold All-Atom
 (Krishna et al. 2024). Tools: Boltz-2 via [joltz](https://github.com/nboyd/joltz), Protenix, mosaic, and
 [jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).

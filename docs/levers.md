@@ -114,5 +114,4 @@ training-free loop, buildable from Boltz-2's diffusion module + jligandmpnn.
 ## Framing sources
 - NISE (Polizzi lab, Nature s41586-026-10670-w), the gradient-free selection loop this is a gradient
   counterpart to.
-- DRaFT (Clark et al. 2023), reward backprop through a differentiable generative model.
 - O3 / oracle budgets (Kalisz et al. 2026), the matched-budget comparison run above.
