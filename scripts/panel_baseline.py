@@ -52,6 +52,7 @@ def main():
     ap.add_argument("--lig-end", type=int, default=999)
     ap.add_argument("--bestn-seeds", type=int, default=8)
     ap.add_argument("--o3-seeds", type=int, default=5)
+    ap.add_argument("--checkpoints", default="25", help="budgets (folds) to snapshot, e.g. 25,100")
     a = ap.parse_args()
 
     panel = json.loads((DATA / "ligand_panel.json").read_text())[a.lig_start:a.lig_end]
@@ -62,7 +63,7 @@ def main():
         for method, n in [("bestn", a.bestn_seeds), ("o3", a.o3_seeds)]:
             for s in range(n):
                 subprocess.run([PY, str(REPO / "scripts/matched_budget.py"), "--method", method,
-                                "--seed", str(s), "--checkpoints", "25", "--binder-len", str(L),
+                                "--seed", str(s), "--checkpoints", a.checkpoints, "--binder-len", str(L),
                                 "--ligand", p["ligand"], "--out", str(J)],
                                env={**os.environ, "CUDA_VISIBLE_DEVICES": GPU}, check=True)
         protenix(J)

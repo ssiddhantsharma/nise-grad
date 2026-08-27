@@ -102,6 +102,16 @@ per-backbone-best interface pTM **0.89** on average (mean over ligands), near th
 A backbone generator supplies the pocket the sequence gradient cannot build. Per-ligand scored designs in
 `scripts/data/rfd3_panel/`.
 
+## Independence judge (RF2AA, `scripts/rf2aa_independence.py`)
+Is the plateau an AlphaFold3-family artifact? Re-fold every held-out design (best composition-passing STE
+plateau, best RFd3, real anchor, and a scramble control; 14 ligands, 56 folds) on RoseTTAFold All-Atom
+(Krishna et al. 2024, Science, doi:10.1126/science.adl2528), a ligand-capable predictor of a different
+lineage, single-sequence and template-free. Metric: RF2AA inter-chain (protein-ligand) PAE, lower = more
+confident interface. Verified (56/56 folds, mean over 14 ligands): anchor_real 11.0, rfd3 12.9,
+ste_plateau 23.7, scramble 21.8. Real and RFd3 beat the STE plateau on 14/14 ligands, and the plateau
+scores no better than scramble. A non-AF3 predictor reproduces the ordering, so the plateau is not a
+shared-family artifact. Scored designs in `scripts/data/rf2aa_scored.json`.
+
 ## Not implemented (candidate next approach)
 
 ### HalluDesign
