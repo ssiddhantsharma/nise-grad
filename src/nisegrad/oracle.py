@@ -20,9 +20,11 @@ from mosaic.losses.boltz2 import (
     set_binder_sequence,
 )
 
-DEFAULT_CONF_CKPT = Path.home() / ".boltz" / "boltz2_conf.ckpt"
-DEFAULT_AFF_CKPT = Path.home() / ".boltz" / "boltz2_aff.ckpt"
+# NISEGRAD_BOLTZ_CACHE is the single knob: it roots the model checkpoints AND the CCD/mols
+# cache (default ~/.boltz), so pointing it elsewhere moves everything, not just the features.
 DEFAULT_CACHE = Path(os.environ.get("NISEGRAD_BOLTZ_CACHE", str(Path.home() / ".boltz")))
+DEFAULT_CONF_CKPT = DEFAULT_CACHE / "boltz2_conf.ckpt"
+DEFAULT_AFF_CKPT = DEFAULT_CACHE / "boltz2_aff.ckpt"
 
 _YAML = """version: 1
 sequences:
@@ -38,6 +40,15 @@ sequences:
 
 def load_affinity_head(aff_ckpt: Path = DEFAULT_AFF_CKPT):
     """Load Boltz-2 affinity_module1 from the affinity checkpoint into JAX/joltz."""
+    aff_ckpt = Path(aff_ckpt)
+    if not aff_ckpt.exists():
+        # download_boltz2 only fetches the affinity ckpt when the conf ckpt is also missing, so a
+        # present-conf/absent-aff cache would otherwise fail here with a cryptic torch error.
+        raise FileNotFoundError(
+            f"Boltz-2 affinity checkpoint not found at {aff_ckpt}. Fetch it once with:\n"
+            f"  curl -fL https://huggingface.co/boltz-community/boltz-2/resolve/main/boltz2_aff.ckpt"
+            f" -o {aff_ckpt}"
+        )
     ck = torch.load(aff_ckpt, map_location="cpu", weights_only=False)
     hp = ck["hyper_parameters"]
     args = dict(hp["affinity_model_args1"])

@@ -36,12 +36,13 @@ Plain `pip install -e .` also works, but has to resolve `mosaic` from git; if th
 ## Weights
 Neither set of weights is stored in this repo. Both are standard third-party model files.
 
-**Boltz-2** (needed for every fold). All into `~/.boltz` (or `NISEGRAD_BOLTZ_CACHE`): the two model
-checkpoints `boltz2_conf.ckpt` and `boltz2_aff.ckpt`, plus the CCD chemistry data `mols.tar` (untar into
-`~/.boltz/mols/`) and `ccd.pkl`. The `boltz` CLI fetches all four automatically on its first run. If you
-place them by hand, note that `ccd.pkl` is hosted in the boltz-**1** HF repo by design (Boltz-2 still reads
-it, so this is not Boltz-1), the checkpoints and `mols.tar` are in the boltz-2 repo, and `mols.tar` must be
-extracted into a `mols/` directory.
+**Boltz-2** (needed for every fold). Into `~/.boltz`, or wherever `NISEGRAD_BOLTZ_CACHE` points (a single
+knob that roots the checkpoints and the CCD cache together): the two model checkpoints `boltz2_conf.ckpt`
+and `boltz2_aff.ckpt`, and the CCD chemistry `mols.tar` (extract it into a `mols/` directory). The `boltz`
+CLI populates the cache on first run, but only when the conf checkpoint is missing, and it never re-fetches
+the affinity checkpoint on its own, so when seeding the cache by hand include `boltz2_aff.ckpt`. `ccd.pkl`
+(from the boltz-1 repo) is the old monolithic CCD; the Boltz-2 fold path reads `mols/` instead and never
+opens it, so you can skip `ccd.pkl`.
 
 **LigandMPNN** (needed *only* for `rescue_backbone.py`, `project.py`, `guided_design.py` — not for the
 core STE panel or baselines, which need only Boltz-2). Run `bash scripts/get_weights.sh`, which fetches
