@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 .venv/
 weights/
+
+# experiment byproducts (regenerable; the scored *.json summaries are what gets committed)
+scripts/data/**/*_out/
+scripts/data/**/predictions/
+scripts/data/**/*_in.json
+scripts/data/**/*_designs.json
