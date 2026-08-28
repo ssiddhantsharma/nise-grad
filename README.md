@@ -23,14 +23,34 @@ The method, the controlled study, and a de novo protein-small-molecule affinity 
 in the workshop paper (under review). This repo holds the code and the scored data behind every number.
 
 ## Install
+The repo ships a `uv.lock`, so `uv` is the reliable path. It resolves the `git+https` deps
+(`joltz`, `mosaic`, `jligandmpnn`) that plain pip struggles with:
 ```
-pip install -e .
-# GPU JAX that works with mosaic/joltz on CUDA 12:
-pip install "jax[cuda12]==0.10.1"
-pip install nvidia-cudnn-cu12==9.17.0.29 nvidia-cusolver-cu12==11.7.3.90 \
-            nvidia-nccl-cu12==2.28.9 nvidia-nvshmem-cu12==3.4.5
+uv sync                       # build .venv from the lockfile
+# GPU JAX for mosaic/joltz on CUDA 12, into the same venv:
+uv pip install "jax[cuda12]==0.10.1" nvidia-cudnn-cu12==9.17.0.29 \
+   nvidia-cusolver-cu12==11.7.3.90 nvidia-nccl-cu12==2.28.9 nvidia-nvshmem-cu12==3.4.5
 ```
-Checkpoints in `~/.boltz` (or set `NISEGRAD_BOLTZ_CACHE`): `boltz2_conf.ckpt`, `boltz2_aff.ckpt`.
+Plain `pip install -e .` also works, but has to resolve `mosaic` from git; if that fights you, use `uv`.
+
+## Weights
+Neither set of weights is stored in this repo. Both are standard third-party model files.
+
+**Boltz-2** (needed for every fold). All into `~/.boltz` (or `NISEGRAD_BOLTZ_CACHE`): the two model
+checkpoints `boltz2_conf.ckpt` and `boltz2_aff.ckpt`, plus the CCD chemistry data `mols.tar` (untar into
+`~/.boltz/mols/`) and `ccd.pkl`. The `boltz` CLI fetches all four automatically on its first run. If you
+place them by hand, note that `ccd.pkl` is hosted in the boltz-**1** HF repo by design (Boltz-2 still reads
+it, so this is not Boltz-1), the checkpoints and `mols.tar` are in the boltz-2 repo, and `mols.tar` must be
+extracted into a `mols/` directory.
+
+**LigandMPNN** (needed *only* for `rescue_backbone.py`, `project.py`, `guided_design.py` — not for the
+core STE panel or baselines, which need only Boltz-2). Run `bash scripts/get_weights.sh`, which fetches
+both files into `weights/` and prints the two env vars to export. Both come from the official LigandMPNN
+repo (`github.com/dauparas/LigandMPNN`) and are not on GitHub as files. To do it by hand:
+- `ligandmpnn_v_32_010_25.pt` from `files.ipd.uw.edu/pub/ligandmpnn/` (LigandMPNN's `get_model_params.sh`).
+  Set `LIGANDMPNN_CKPT` to its path.
+- its reference model module `model_utils.py` (which defines `ProteinMPNN`), placed in a directory so it
+  imports as `ligmpnn_model`. Set `LIGMPNN_MODEL_DIR` to that directory.
 
 ## Layout
 - `src/nisegrad/` differentiable `P(bind)(sequence, ligand)` oracle and the STE optimiser
