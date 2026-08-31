@@ -2,12 +2,15 @@
 does not. RFd3 (generated backbone) is the panel-wide plateau figure, not here."""
 import os
 from pathlib import Path as _P
+
 DATADIR = str(_P(__file__).resolve().parents[1] / "data")
 FIGDIR = os.environ.get("FIGDIR", str(_P(__file__).resolve().parents[2] / "figures"))
 os.makedirs(FIGDIR, exist_ok=True)
 
 from pathlib import Path
+
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 

@@ -30,8 +30,8 @@ def main():
     real = points("apix_ptm_scored.json", "anchor_real")[0]
 
     fig, ax = plt.subplots(figsize=(5.0, 3.8))
-    ax.scatter(*zip(*aff), c=AFF, s=28, label="affinity objective", alpha=0.7)
-    ax.scatter(*zip(*ptm), c=PTM, s=40, label="pTMEnergy objective", zorder=3)
+    ax.scatter(*zip(*aff, strict=True), c=AFF, s=28, label="affinity objective", alpha=0.7)
+    ax.scatter(*zip(*ptm, strict=True), c=PTM, s=40, label="pTMEnergy objective", zorder=3)
     ax.scatter([real[0]], [real[1]], c=REAL, s=90, marker="*", zorder=4, label="real binder")
     ax.annotate("better structure", xy=(0.15, 0.5), xytext=(0.15, 1.4), fontsize=8, color="0.4",
                 ha="center", arrowprops={"arrowstyle": "->", "color": "0.6"})

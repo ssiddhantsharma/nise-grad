@@ -80,7 +80,7 @@ def main():
     opt = optax.adam(0.1)
     state = opt.init(logits)
     nll_fn = jax.jit(jax.value_and_grad(lambda x: reg(jax.nn.softmax(x, -1), frozen, key)[0]))
-    for i in range(a.design_steps):
+    for _ in range(a.design_steps):
         _nll, grad = nll_fn(logits)
         updates, state = opt.update(grad, state)
         logits = optax.apply_updates(logits, updates)

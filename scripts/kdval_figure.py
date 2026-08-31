@@ -27,7 +27,7 @@ def spearman(xs, ys):
             r[o] = i
         return r
     rx, ry = rank(xs), rank(ys); n = len(xs)
-    return 1 - 6 * sum((a - b) ** 2 for a, b in zip(rx, ry)) / (n * (n * n - 1))
+    return 1 - 6 * sum((a - b) ** 2 for a, b in zip(rx, ry, strict=True)) / (n * (n * n - 1))
 
 
 def main():

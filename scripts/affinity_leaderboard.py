@@ -113,18 +113,18 @@ def run_protenix(limit):
 
 def spearman(xs, ys):
     rx, ry = _rank(xs), _rank(ys); n = len(xs)
-    return 1 - 6 * sum((a - b) ** 2 for a, b in zip(rx, ry)) / (n * (n * n - 1))
+    return 1 - 6 * sum((a - b) ** 2 for a, b in zip(rx, ry, strict=True)) / (n * (n * n - 1))
 
 
 def pearson(xs, ys):
     n = len(xs); mx = sum(xs) / n; my = sum(ys) / n
-    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=True))
     sx = sum((x - mx) ** 2 for x in xs) ** 0.5; sy = sum((y - my) ** 2 for y in ys) ** 0.5
     return cov / (sx * sy)
 
 
 def rmse(xs, ys):
-    return (sum((x - y) ** 2 for x, y in zip(xs, ys)) / len(xs)) ** 0.5
+    return (sum((x - y) ** 2 for x, y in zip(xs, ys, strict=True)) / len(xs)) ** 0.5
 
 
 def bootstrap_ci(xs, ys, stat, n_boot=2000, seed=0):
@@ -160,7 +160,7 @@ def score():
         vals = [(r[key], r["pKd"]) for r in d if r.get(key) is not None]
         if len(vals) <= 2:
             continue
-        xs, ys = map(list, zip(*vals))
+        xs, ys = map(list, zip(*vals, strict=True))
         rho = spearman(xs, ys); lo, hi = bootstrap_ci(xs, ys, spearman)
         # RMSE only meaningful for calibrated pK predictions
         rm = f"{rmse(xs, ys):.2f}" if key.endswith("_pK") else "-"

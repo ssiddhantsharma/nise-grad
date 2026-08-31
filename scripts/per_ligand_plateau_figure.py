@@ -44,7 +44,7 @@ def main():
     y = list(range(len(rows)))
 
     fig, ax = plt.subplots(figsize=(6.0, 4.6))
-    for i, (_, a, b) in zip(y, rows):
+    for i, (_, a, b) in zip(y, rows, strict=True):
         ax.plot([b, a], [i, i], color="#DDDDDD", lw=1.4, zorder=1)
     ax.scatter([r[2] for r in rows], y, c=STE, s=46, zorder=2,
                edgecolor="white", linewidth=0.5, label="best STE de-novo (composition-passing)")

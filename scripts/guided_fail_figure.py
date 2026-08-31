@@ -46,9 +46,9 @@ def main():
     for data, c, lab in [(denovo, DENOVO, "de-novo STE"), (guided, GUIDED, "guided diffusion"),
                          (rescue, RESCUE, "rescue (real backbone)")]:
         if data:
-            ax.scatter(*zip(*data), c=c, s=32, alpha=0.7, label=lab, edgecolor="white", linewidth=0.4)
+            ax.scatter(*zip(*data, strict=True), c=c, s=32, alpha=0.7, label=lab, edgecolor="white", linewidth=0.4)
     if real:
-        ax.scatter(*zip(*real), c=REAL, s=120, marker="*", zorder=5, label="real binder apx1049")
+        ax.scatter(*zip(*real, strict=True), c=REAL, s=120, marker="*", zorder=5, label="real binder apx1049")
 
     ax.axvspan(0, 0.25, color="#009E73", alpha=0.06)
     ax.text(0.125, 0.06, "designable\ncomposition", ha="center", fontsize=8, color="#009E73")

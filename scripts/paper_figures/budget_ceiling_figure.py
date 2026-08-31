@@ -4,13 +4,17 @@ decline as they reward-hack; pure sampling (Best-K-of-N) creeps up; all plateau 
 Held-out Protenix interface pTM, mean over seeds, 95% bootstrap CI. Single target -> no statistic mixing."""
 import os
 from pathlib import Path as _P
+
 DATADIR = str(_P(__file__).resolve().parents[1] / "data")
 FIGDIR = os.environ.get("FIGDIR", str(_P(__file__).resolve().parents[2] / "figures"))
 os.makedirs(FIGDIR, exist_ok=True)
 
-import json, numpy as np
+import json
 from pathlib import Path
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -32,8 +36,8 @@ def traj(rows, method):
         m, lo, hi = ci(v); ms.append(m); los.append(lo); his.append(hi)
     return ms, los, his
 
-sweep = json.load(open(f"{DATA}/budget_scored.json"))          # STE trajectory + anchors
-base = json.load(open(f"{DATA}/expB_apix_baselines_budget.json"))  # bestn + o3 trajectories
+sweep = json.loads(Path(f"{DATA}/budget_scored.json").read_text())          # STE trajectory + anchors
+base = json.loads(Path(f"{DATA}/expB_apix_baselines_budget.json").read_text())  # bestn + o3 trajectories
 ste = traj(sweep, "ste")
 bn = traj(base, "bestn")
 o3 = traj(base, "o3")

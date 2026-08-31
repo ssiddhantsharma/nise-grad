@@ -11,7 +11,12 @@ Modes:
   fold   -> run RF2AA on each design (needs the RFAA micromamba env + a free GPU)
   parse  -> read RF2AA err_dicts -> scripts/data/rf2aa_scored.json
 """
-import argparse, glob, json, os, subprocess
+import argparse
+import contextlib
+import glob
+import json
+import os
+import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -25,10 +30,10 @@ def maxaa(s): return max(Counter(s).values()) / len(s) if s else 1.0
 def ip(r): return r.get("protenix_iptm")
 
 def build():
-    panel = {p["ligand"]: p["ligand_name"] for p in json.load(open(DATA / "ligand_panel.json"))}
+    panel = {p["ligand"]: p["ligand_name"] for p in json.loads((DATA / "ligand_panel.json").read_text())}
     rows = []
     for f in sorted(glob.glob(str(DATA / "panel_run/*.json"))):
-        d = json.load(open(f))
+        d = json.loads(Path(f).read_text())
         smi = next((r["ligand"] for r in d if r["method"] == "anchor_real"), None)
         name = panel.get(smi, Path(f).stem.replace("lig_", ""))
         # best composition-passing STE
@@ -45,7 +50,7 @@ def build():
     # best composition-passing RFd3 per ligand
     for f in sorted(glob.glob(str(DATA / "rfd3_panel/*.json"))):
         if f.endswith("_designs.json"): continue
-        d = json.load(open(f))
+        d = json.loads(Path(f).read_text())
         if not d: continue
         smi = d[0]["ligand"]; name = panel.get(smi, Path(f).stem)
         rf = [r for r in d if ip(r) is not None and maxaa(r["seq"]) < POLY_X]
@@ -73,10 +78,8 @@ def _sdf_cache(smiles, key, sdfdir):
     m = Chem.AddHs(m)
     if AllChem.EmbedMolecule(m, randomSeed=42) != 0:
         AllChem.EmbedMolecule(m, randomSeed=42, useRandomCoords=True)
-    try:
+    with contextlib.suppress(Exception):
         AllChem.MMFFOptimizeMolecule(m)
-    except Exception:
-        pass
     w = Chem.SDWriter(str(path)); w.write(m); w.close()
     return path
 

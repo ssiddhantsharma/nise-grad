@@ -3,17 +3,21 @@ ordering real ~ RFd3 << STE-plateau ~ scramble. Metric: RF2AA inter-chain (prote
 more confident interface. Mean over 14 ligands, 95% bootstrap CI."""
 import os
 from pathlib import Path as _P
+
 DATADIR = str(_P(__file__).resolve().parents[1] / "data")
 FIGDIR = os.environ.get("FIGDIR", str(_P(__file__).resolve().parents[2] / "figures"))
 os.makedirs(FIGDIR, exist_ok=True)
 
-import json, numpy as np
+import json
 from pathlib import Path
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-D = json.load(open(DATADIR + "/rf2aa_scored.json"))
+D = json.loads(Path(DATADIR + "/rf2aa_scored.json").read_text())
 OUT = Path(FIGDIR + "/rf2aa_independence.png")
 rng = np.random.default_rng(0)
 
@@ -33,7 +37,7 @@ for r in D:
 
 fig, ax = plt.subplots(figsize=(5.0, 3.9))
 xs = range(len(order))
-for i, (lab, key, col) in enumerate(order):
+for i, (_lab, key, col) in enumerate(order):
     m, lo, hi = ci(by[key])
     ax.bar(i, m, color=col, width=0.62, zorder=3)
     ax.errorbar(i, m, yerr=[[lo], [hi]], color="#333", elinewidth=1.2, capsize=3, zorder=4)
