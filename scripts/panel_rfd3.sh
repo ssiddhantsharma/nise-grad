@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # RFd3 backbone arm over a slice of the 14-ligand panel on ONE GPU.
 # RFd3 backbones (bury ligand) -> LigandMPNN seqs -> held-out Protenix. Resumable (skips done ligands).
-# Usage: GPU=0 LIG_START=0 LIG_END=7 [N_DESIGNS=24 N_SEQS=4] bash panel_rfd3.sh
+# Usage: CHEM_FAP_DIR=... PROTENIX_DIR=... GPU=0 LIG_START=0 LIG_END=7 [ND=24 NS=4] bash panel_rfd3.sh
 set -uo pipefail
 GPU="${GPU:-0}"; LIG_START="${LIG_START:-0}"; LIG_END="${LIG_END:-14}"
 ND="${ND:-24}"; NS="${NS:-4}"
-CF=~/siddhant/chemistry_fap
-NV=~/siddhant/oss/nise-grad
+CF="${CHEM_FAP_DIR:?set CHEM_FAP_DIR to your RFd3 / chemistry_fap pipeline checkout}"
+NV="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="$NV/.venv/bin/python"
 PANEL="$NV/scripts/data/ligand_panel.json"
 OUTDIR="$NV/scripts/data/rfd3_panel"; mkdir -p "$OUTDIR"
@@ -39,7 +39,7 @@ for line in "${LINES[@]}"; do
   echo "hbond acceptors: $HBOND_LIGAND_ATOM"
   bash scripts/rfd3.sh          || { echo "RFD3 FAIL $slug"; continue; }
   bash scripts/ligandmpnn.sh    || { echo "MPNN FAIL $slug"; continue; }
-  RUN=~/siddhant/chemistry_fap/runs/rfd3_$slug
+  RUN="$CF/runs/rfd3_$slug"
   J="$OUTDIR/${slug}_designs.json"
   python3 - "$RUN/ligandmpnn/seqs" "$smi" "$J" <<'PY'
 import sys, json, glob, os
@@ -57,7 +57,7 @@ for fa in sorted(glob.glob(os.path.join(seqdir, "*.fa"))):
 json.dump(rows, open(out, "w"), indent=2); print("designs", len(rows))
 PY
   cd "$NV"
-  export PROTENIX_DIR=~/siddhant/tools/Protenix; O="$OUTDIR/${slug}_out"; mkdir -p "$O"
+  export PROTENIX_DIR="${PROTENIX_DIR:?set PROTENIX_DIR to your Protenix checkout}"; O="$OUTDIR/${slug}_out"; mkdir -p "$O"
   "$PY" scripts/protenix_score.py build --in "$J" --input-json "$O/in.json"
   ( cd "$PROTENIX_DIR" && CUDA_VISIBLE_DEVICES="$GPU" .venv/bin/protenix pred -i "$O/in.json" \
       -o "$O/pred" -s 101 -n protenix-v2 --use_msa false --use_default_params true )

@@ -61,6 +61,20 @@ pred ... -n protenix-v2`, so point `PROTENIX_DIR` at that checkout. Two gotchas 
 - The official HTTPS download for the `protenix-v2.pt` weights is currently blocked. Fetch it from the
   community mirror `huggingface.co/TMF001/protenix-v2-weights` instead.
 
+## Reproducibility tiers
+Not everything here is runnable from a clean machine. Two tiers:
+
+- **From scratch.** The STE panel, the gradient-free baselines, the rescue and projector, and the affinity
+  benchmark. Needs Boltz-2 and LigandMPNN (both reachable) plus the Protenix-v2 judge (a separate checkout,
+  Python 3.11, weights via the mirror above). Every source above is live.
+- **Data-only** (regeneration needs external installs we cannot redistribute): the RFdiffusion3 backbone
+  generation (`panel_rfd3.sh`, `run2_rfd3_arm.sh`, pointed at an RFd3 pipeline via `CHEM_FAP_DIR`) and the
+  RF2AA independence fold (`rf2aa_independence.py`, via `RF2AA_DIR` + a micromamba env). Their scored
+  outputs are committed (`scripts/data/rfd3_panel/`, `rf2aa_scored.json`), so those numbers reproduce from
+  data without rerunning.
+
+Run `bash scripts/check_setup.sh` to see what is present and what is reachable before starting.
+
 ## Layout
 - `src/nisegrad/` differentiable `P(bind)(sequence, ligand)` oracle and the STE optimiser
 - `scripts/matched_budget.py` STE / Best-K-of-N / O3 designs at a fold budget
