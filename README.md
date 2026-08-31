@@ -53,6 +53,14 @@ repo (`github.com/dauparas/LigandMPNN`) and are not on GitHub as files. To do it
 - its reference model module `model_utils.py` (which defines `ProteinMPNN`), placed in a directory so it
   imports as `ligmpnn_model`. Set `LIGMPNN_MODEL_DIR` to that directory.
 
+**Protenix-v2** (the held-out judge; used by `protenix_score.py` and `panel_run.py`). The judge is a
+separate ByteDance Protenix checkout with its own venv; the scripts run `$PROTENIX_DIR/.venv/bin/protenix
+pred ... -n protenix-v2`, so point `PROTENIX_DIR` at that checkout. Two gotchas that cost real time:
+- Build that venv on **Python 3.11**, not 3.12. Protenix ships prebuilt fused CUDA kernels compiled for
+  cp311, which a 3.12 venv cannot import.
+- The official HTTPS download for the `protenix-v2.pt` weights is currently blocked. Fetch it from the
+  community mirror `huggingface.co/TMF001/protenix-v2-weights` instead.
+
 ## Layout
 - `src/nisegrad/` differentiable `P(bind)(sequence, ligand)` oracle and the STE optimiser
 - `scripts/matched_budget.py` STE / Best-K-of-N / O3 designs at a fold budget
