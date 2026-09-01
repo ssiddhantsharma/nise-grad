@@ -84,8 +84,8 @@ Run `bash scripts/check_setup.sh` to see what is present and what is reachable b
 - `scripts/protenix_score.py` held-out Protenix judge
 - `scripts/data/` the scored experiment logs behind every number: `panel_run/` (STE panel),
   `ste_best40/` (STE best-of-40 budget match), `rfd3_panel/` (backbone arm), `rescue_panel/`
-  (real-backbone rescue, when run), `bench47.json` + `benchmark.json` (affinity benchmark),
-  `rf2aa_scored.json` (independence judge)
+  (real-backbone rescue; `rescue_panel_nocomp/` is the collapsed comp-weight-0 run, see its NOTE),
+  `bench47.json` + `benchmark.json` (affinity benchmark), `rf2aa_scored.json` (independence judge)
 
 ## Credit
 Builds on NISE (Polizzi lab), DBMol (Qin et al. 2026), BindEnergyCraft (Nori
