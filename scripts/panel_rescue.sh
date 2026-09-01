@@ -13,6 +13,9 @@ PY="$REPO/.venv/bin/python"
 PANEL="$REPO/scripts/data/ligand_panel.json"
 OUTDIR="$REPO/scripts/data/rescue_panel"; mkdir -p "$OUTDIR"
 GPU="${GPU:-1}"; NSEEDS="${NSEEDS:-4}"; LIG_START="${LIG_START:-0}"; LIG_END="${LIG_END:-14}"
+# COMP_WEIGHT>0 penalises low-complexity sequences. The first panel run at 0.0 collapsed to
+# poly-alanine on 10/14 ligands (MPNN-NLL descent reward-hacks), so the default is now 1.0.
+COMP_WEIGHT="${COMP_WEIGHT:-1.0}"
 : "${PROTENIX_DIR:?set PROTENIX_DIR to your Protenix checkout}"
 : "${LIGANDMPNN_CKPT:?set LIGANDMPNN_CKPT}"
 : "${LIGMPNN_MODEL_DIR:?set LIGMPNN_MODEL_DIR}"
@@ -34,7 +37,7 @@ for line in "${LINES[@]}"; do
   echo "===== $slug (L=${#seq}) GPU $GPU NSEEDS=$NSEEDS ====="
   for s in $(seq 0 $((NSEEDS - 1))); do
     CUDA_VISIBLE_DEVICES="$GPU" "$PY" "$REPO/scripts/rescue_backbone.py" \
-      --ref-seq "$seq" --ligand "$smi" --seed "$s" --steps 60 --out "$J" \
+      --ref-seq "$seq" --ligand "$smi" --seed "$s" --steps 60 --comp-weight "$COMP_WEIGHT" --out "$J" \
       || echo "RESCUE FAIL $slug seed $s"
   done
   [ -f "$J" ] || { echo "no designs for $slug"; continue; }

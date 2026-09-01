@@ -21,7 +21,7 @@ import optax
 import torch
 
 from nisegrad.boltz_ligand import build_boltz_regularizer
-from nisegrad.optimize import AA_ORDER, decode, sigmoid
+from nisegrad.optimize import AA_ORDER, composition_kl, decode, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
@@ -43,6 +43,9 @@ def main():
     ap.add_argument("--ligand", required=True)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--steps", type=int, default=60)
+    ap.add_argument("--comp-weight", type=float, default=0.0,
+                    help="composition_kl penalty weight; >0 stops the MPNN-NLL descent from "
+                         "collapsing to poly-alanine (the panel run at 0.0 collapsed on 10/14 ligands)")
     ap.add_argument("--out", default="rescue.json")
     a = ap.parse_args()
 
@@ -61,7 +64,9 @@ def main():
     logits = 0.1 * jax.random.normal(jax.random.PRNGKey(a.seed), (L, 20))
     opt = optax.adam(0.1)
     state = opt.init(logits)
-    nll_fn = jax.jit(jax.value_and_grad(lambda x: reg(jax.nn.softmax(x, -1), backbone, key)[0]))
+    nll_fn = jax.jit(jax.value_and_grad(
+        lambda x: reg(jax.nn.softmax(x, -1), backbone, key)[0]
+        + a.comp_weight * composition_kl(jax.nn.softmax(x, -1))))
     for i in range(a.steps):
         nll, grad = nll_fn(logits)
         updates, state = opt.update(grad, state)
