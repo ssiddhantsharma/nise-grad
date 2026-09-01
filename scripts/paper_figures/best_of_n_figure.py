@@ -39,7 +39,8 @@ def load(subdir, method):
         if f.endswith("_designs.json"):
             continue
         key = Path(f).stem.replace("lig_", "").replace("naphtha", "nap")
-        out[key] = passing(json.load(open(f)), method)
+        with open(f) as fh:
+            out[key] = passing(json.load(fh), method)
     return out
 
 
