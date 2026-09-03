@@ -34,8 +34,6 @@ else miss "$CACHE/mols/ absent (untar mols.tar here)"; reach "https://huggingfac
 echo "== LigandMPNN (only for rescue/projector/guided) =="
 if [ -n "${LIGANDMPNN_CKPT:-}" ] && [ -s "${LIGANDMPNN_CKPT:-/nonexistent}" ]; then pass "LIGANDMPNN_CKPT=$LIGANDMPNN_CKPT"
 else note "LIGANDMPNN_CKPT unset/absent (run scripts/get_weights.sh; not needed for the core panel)"; fi
-if [ -n "${LIGMPNN_MODEL_DIR:-}" ] && [ -f "${LIGMPNN_MODEL_DIR:-/nonexistent}/ligmpnn_model.py" ]; then pass "LIGMPNN_MODEL_DIR=$LIGMPNN_MODEL_DIR"
-else note "LIGMPNN_MODEL_DIR unset/incomplete (run scripts/get_weights.sh)"; fi
 
 echo "== Protenix-v2 judge (scores every design; separate venv, Python 3.11) =="
 if [ -n "${PROTENIX_DIR:-}" ] && [ -x "${PROTENIX_DIR:-/nonexistent}/.venv/bin/protenix" ]; then

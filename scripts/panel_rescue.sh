@@ -5,7 +5,7 @@
 # Resumable: skips a ligand whose scored file already exists.
 #
 # Usage:
-#   PROTENIX_DIR=... LIGANDMPNN_CKPT=... LIGMPNN_MODEL_DIR=... \
+#   PROTENIX_DIR=... LIGANDMPNN_CKPT=... \
 #   GPU=1 NSEEDS=4 bash scripts/panel_rescue.sh
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +18,6 @@ GPU="${GPU:-1}"; NSEEDS="${NSEEDS:-4}"; LIG_START="${LIG_START:-0}"; LIG_END="${
 COMP_WEIGHT="${COMP_WEIGHT:-1.0}"
 : "${PROTENIX_DIR:?set PROTENIX_DIR to your Protenix checkout}"
 : "${LIGANDMPNN_CKPT:?set LIGANDMPNN_CKPT}"
-: "${LIGMPNN_MODEL_DIR:?set LIGMPNN_MODEL_DIR}"
 
 mapfile -t LINES < <("$PY" -c "
 import json, re

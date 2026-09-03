@@ -15,16 +15,15 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WEIGHTS_DIR="${WEIGHTS_DIR:-$REPO/weights}"
-REF_DIR="$WEIGHTS_DIR/jligandmpnn_reference"
 CKPT="$WEIGHTS_DIR/ligandmpnn_v_32_010_25.pt"
 
-# Verified primary sources:
-#   checkpoint      -> dauparas/LigandMPNN get_model_params.sh (hosted on the IPD file server)
-#   reference model -> LigandMPNN model_utils.py (defines ProteinMPNN; imported as ligmpnn_model)
+# Verified primary source:
+#   checkpoint -> dauparas/LigandMPNN get_model_params.sh (hosted on the IPD file server)
+# The torch reference module is NOT needed here: jigandmpnn (the JAX LigandMPNN this repo
+# depends on) vendors it and does the torch->JAX conversion internally.
 CKPT_URL="https://files.ipd.uw.edu/pub/ligandmpnn/ligandmpnn_v_32_010_25.pt"
-MODEL_URL="https://raw.githubusercontent.com/dauparas/LigandMPNN/main/model_utils.py"
 
-mkdir -p "$REF_DIR"
+mkdir -p "$WEIGHTS_DIR"
 
 fetch() {  # $1 url  $2 dest
   if [ -s "$2" ]; then echo "  exists, skipping: $2"; return; fi
@@ -35,8 +34,6 @@ fetch() {  # $1 url  $2 dest
 
 echo "LigandMPNN checkpoint ->"
 fetch "$CKPT_URL" "$CKPT"
-echo "LigandMPNN reference model (as ligmpnn_model.py) ->"
-fetch "$MODEL_URL" "$REF_DIR/ligmpnn_model.py"
 
 # Sanity: the checkpoint is a torch pickle (>1 MB), not an HTML error page.
 if [ "$(wc -c < "$CKPT")" -lt 1000000 ]; then
@@ -45,10 +42,9 @@ fi
 
 cat <<EOF
 
-Done. Set these before running rescue_backbone.py / project.py / guided_design.py:
+Done. Set this before running rescue_backbone.py / project.py / guided_design.py:
 
   export LIGANDMPNN_CKPT="$CKPT"
-  export LIGMPNN_MODEL_DIR="$REF_DIR"
 
-(The core STE panel and baselines do not need these; they run on Boltz-2 alone.)
+(The core STE panel and baselines do not need it; they run on Boltz-2 alone.)
 EOF

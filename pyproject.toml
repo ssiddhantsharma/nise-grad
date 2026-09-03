@@ -16,11 +16,14 @@ dependencies = [
     "matplotlib",
     "joltz @ git+https://github.com/nboyd/joltz",
     "mosaic @ git+https://github.com/escalante-bio/mosaic",
-    "jligandmpnn @ git+https://github.com/ssiddhantsharma/jligandmpnn",
+    # nboyd/jigandmpnn wheel is broken until nboyd/jigandmpnn PR (force-include fix) merges;
+    # pin the packaging-fix fork meanwhile so `uv sync` builds cleanly. Switch back to
+    # git+https://github.com/nboyd/jigandmpnn once merged.
+    "jigandmpnn @ git+https://github.com/ssiddhantsharma/jigandmpnn@fix-wheel-packaging",
 ]
 
 [tool.hatch.metadata]
-allow-direct-references = true  # deps below are git+https (joltz, mosaic, jligandmpnn)
+allow-direct-references = true  # deps below are git+https (joltz, mosaic, jigandmpnn)
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nisegrad"]

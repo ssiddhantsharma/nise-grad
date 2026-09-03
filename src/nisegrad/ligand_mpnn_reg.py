@@ -1,4 +1,4 @@
-"""Ligand-aware sequence regularizer, backed by jligandmpnn (JAX LigandMPNN).
+"""Ligand-aware sequence regularizer, backed by jigandmpnn (Boyd's JAX/Equinox LigandMPNN).
 
 The binder's soft sequence is scored by LigandMPNN given the predicted backbone AND the
 ligand context, so the negative log-likelihood keeps the design both protein-like and
@@ -37,7 +37,7 @@ def nll_from_logprobs(soft_mpnn, log_probs, binder_mask):
 class LigandMPNNRegularizer:
     """Callable matching optimize_pbind's `mpnn(soft, output, key) -> (nll, aux)` interface.
 
-    model  : jligandmpnn.LigandMPNN (from_torch of a real checkpoint)
+    model  : jigandmpnn ProteinMPNN, ligand model (jigandmpnn._load_model of a checkpoint)
     feats  : dict of the FIXED LigandMPNN inputs (mask, Y_m, Y_t, R_idx, chain_labels,
              chain_mask, randn), each batched [1, ...], everything but the coordinates
     struct_from_output : output -> (X [1,L,4,3] binder backbone N/Ca/C/O, Y [1,L,M,3]
@@ -54,8 +54,22 @@ class LigandMPNNRegularizer:
     def __call__(self, soft_af, output, key):
         f = self.feats
         X, Y = self.struct_from_output(output)
-        soft_mpnn = af20_to_mpnn20(soft_af)  # [L,20]
-        log_probs = self.model.score_soft(
-            soft_mpnn[None], X, f["mask"], Y, f["Y_m"], f["Y_t"],
-            f["R_idx"], f["chain_labels"], f["chain_mask"], f["randn"])[0]  # [L,21]
+        soft_mpnn = af20_to_mpnn20(soft_af)  # [L,20] in LigandMPNN order
+        # jigandmpnn.decode wants a soft [.,21] (index 20 = X); pad an all-zero X column.
+        soft21 = jnp.concatenate(
+            [soft_mpnn, jnp.zeros((*soft_mpnn.shape[:-1], 1), soft_mpnn.dtype)], -1
+        )[None]  # [1,L,21]
+        # Encode the frozen backbone + ligand context (key=None -> no augment_eps noise,
+        # deterministic), then teacher-force the soft sequence through decode.
+        h_V, h_E, E_idx = self.model.encode(
+            X=X, mask=f["mask"], residue_idx=f["R_idx"],
+            chain_encoding_all=f["chain_labels"],
+            Y=Y, Y_t=f["Y_t"], Y_m=f["Y_m"], key=None)
+        # jigandmpnn.decode argsorts decoding_order directly, whereas jligandmpnn used
+        # argsort((chain_mask + 1e-4) * |randn|); pass that pre-argsort value so the decoding
+        # order (hence the teacher-forced log-probs) is byte-identical (verified max|Δ|=0).
+        dec_order = (f["chain_mask"] + 0.0001) * jnp.abs(f["randn"])
+        log_probs = self.model.decode(
+            S=soft21, h_V=h_V, h_E=h_E, E_idx=E_idx,
+            mask=f["mask"], decoding_order=dec_order)[0]  # [L,21]
         return nll_from_logprobs(soft_mpnn, log_probs, self.binder_mask), None
