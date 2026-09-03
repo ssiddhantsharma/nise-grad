@@ -33,6 +33,21 @@ uv pip install "jax[cuda12]==0.10.1" nvidia-cudnn-cu12==9.17.0.29 \
 ```
 Plain `pip install -e .` also works, but has to resolve `mosaic` from git; if that fights you, use `uv`.
 
+> **Why `uv sync` pulls `ssiddhantsharma/jigandmpnn`:** `jigandmpnn` is temporarily pinned to a small
+> packaging-fix fork (upstream [nboyd/jigandmpnn#1](https://github.com/nboyd/jigandmpnn/pull/1) is pending)
+> so its wheel builds cleanly under `uv`. It is nboyd's code unchanged apart from the packaging. Repoint the
+> dependency at `nboyd/jigandmpnn` once the PR merges.
+
+## Quickstart
+```bash
+uv sync                                                # install (then the GPU-jax pin above)
+bash scripts/get_weights.sh                            # LigandMPNN checkpoint (rescue/projector only)
+bash scripts/check_setup.sh                            # doctor: weights, deps import, jax-on-GPU, Protenix
+```
+`scripts/check_setup.sh` tells you exactly what is present and reachable before you spend GPU time. Then run
+any entry point in **Layout**; `scripts/fold_driver.sh` chains the STE panel, RFdiffusion3 arm, rescue, and
+projector end-to-end. Boltz-2 weights download themselves on the first fold (see **Weights**).
+
 ## Weights
 Neither set of weights is stored in this repo. Both are standard third-party model files.
 

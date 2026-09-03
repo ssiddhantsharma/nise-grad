@@ -20,6 +20,12 @@ echo "== nise-grad venv (Python 3.12) =="
 if [ -x "$REPO/.venv/bin/python" ]; then
   v=$(pyver "$REPO/.venv/bin/python")
   [ "$v" = "3.12" ] && pass "venv Python $v" || miss "venv Python $v (want 3.12; run: uv sync)"
+  # the core git deps must actually import (a wheel can resolve but fail to build/import)
+  if "$REPO/.venv/bin/python" -c "import jigandmpnn, joltz, mosaic" 2>/dev/null; then pass "core deps import (jigandmpnn, joltz, mosaic)"
+  else miss "a core dep failed to import (re-run: uv sync)"; fi
+  # jax must see the GPU for the folds; if not, run the GPU-jax pin from the README
+  gpu=$("$REPO/.venv/bin/python" -c "import jax;print('yes' if any(d.platform=='gpu' for d in jax.devices()) else 'no')" 2>/dev/null)
+  [ "$gpu" = "yes" ] && pass "jax sees a GPU" || note "jax is CPU-only (run the README GPU-jax pin to enable CUDA)"
 else miss ".venv missing (run: uv sync)"; fi
 
 echo "== Boltz-2 (needed for every fold) =="
