@@ -17,7 +17,6 @@ set -uo pipefail
 REPO="$HOME/nise-grad"                                   # your nise-grad checkout
 export PROTENIX_DIR="$HOME/Protenix"                     # ByteDance Protenix checkout (its venv MUST be Python 3.11)
 export LIGANDMPNN_CKPT="$REPO/weights/ligandmpnn_v_32_010_25.pt"
-export LIGMPNN_MODEL_DIR="$REPO/weights/jligandmpnn_reference"
 # Boltz-2 weights are read from ~/.boltz (or wherever NISEGRAD_BOLTZ_CACHE points).
 # module load cuda/12.4                                  # uncomment if your cluster uses modules
 # ---------------------------------------------------------------------------

@@ -6,35 +6,28 @@ design a fresh random-init sequence to fit that frozen structure by gradient-des
 LigandMPNN NLL(soft | backbone, ligand). The designed sequence is refolded independently on
 Protenix. If the held-out score jumps toward the real binder while de-novo STE stays at ~0.45, the
 bottleneck is the backbone, not the sequence layer. One design per process (a second jit leaks a
-JAX tracer). Env: LIGANDMPNN_CKPT, LIGMPNN_MODEL_DIR.
+JAX tracer). Env: LIGANDMPNN_CKPT.
 """
 
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 
 import jax
 import jax.numpy as jnp
 import optax
-import torch
 
 from nisegrad.boltz_ligand import build_boltz_regularizer
 from nisegrad.optimize import AA_ORDER, composition_kl, decode, sigmoid
 from nisegrad.oracle import PbindOracle
 
 
-def load_ligandmpnn(ckpt, ref_dir):
-    sys.path.insert(0, ref_dir)
-    import ligmpnn_model as ref
-    from jligandmpnn.model import LigandMPNN
-    ck = torch.load(ckpt, map_location="cpu", weights_only=False)
-    m = ref.ProteinMPNN(model_type="ligand_mpnn", k_neighbors=ck["num_edges"],
-                        atom_context_num=ck["atom_context_num"])
-    m.load_state_dict(ck["model_state_dict"])
-    m.eval()
-    return LigandMPNN.from_torch(m)
+def load_ligandmpnn(ckpt):
+    # jigandmpnn (Boyd) vendors the torch LigandMPNN reference and does the torch->JAX
+    # conversion, so only the checkpoint is needed (no LIGMPNN_MODEL_DIR).
+    from jigandmpnn import _load_model
+    return _load_model(Path(ckpt), "ligand_mpnn")
 
 
 def main():
@@ -50,7 +43,7 @@ def main():
     a = ap.parse_args()
 
     oracle = PbindOracle(num_sampling_steps=25)
-    mpnn = load_ligandmpnn(os.environ["LIGANDMPNN_CKPT"], os.environ["LIGMPNN_MODEL_DIR"])
+    mpnn = load_ligandmpnn(os.environ["LIGANDMPNN_CKPT"])
     L = len(a.ref_seq)
     feats = oracle.features_for("G" * L, a.ligand)
     key = jax.random.PRNGKey(0)

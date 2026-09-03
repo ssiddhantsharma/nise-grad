@@ -75,9 +75,9 @@ real binder's 0.12), i.e. bias, not extreme homopolymer. `optimize.composition_k
 
 ## Projection and the rescue
 
-### jligandmpnn projector (`scripts/project.py`)
+### LigandMPNN projector (`scripts/project.py`)
 Fold, freeze the structure, gradient-descend the LigandMPNN NLL of the soft sequence given that structure
-(`score_soft`). Verified: HURTS the held-out (0.44 -> 0.39) because it projects onto the already
+(via jigandmpnn's `encode`+`decode`). Verified: HURTS the held-out (0.44 -> 0.39) because it projects onto the already
 reward-hacked structure. A documented negative and the control for the rescue.
 
 ### Rescue: design on a real backbone (`scripts/rescue_backbone.py`)
@@ -119,7 +119,7 @@ bioRxiv 2025.11.08.686881. Forward-pass, fine-tune-free sequence-structure co-op
 AlphaFold3-style diffusion module that updates the STRUCTURE (partial-diffusion / SDEdit) with an
 inverse-folding model that redesigns the sequence. The RFd3 arm above already shows a backbone generator
 closes most of the gap; HalluDesign would fold structure generation and sequence design into one
-training-free loop, buildable from Boltz-2's diffusion module + jligandmpnn.
+training-free loop, buildable from Boltz-2's diffusion module + jigandmpnn.
 
 ## Framing sources
 - NISE (Polizzi lab, Nature s41586-026-10670-w), the gradient-free selection loop this is a gradient

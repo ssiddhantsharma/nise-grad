@@ -16,11 +16,11 @@ dependencies = [
     "matplotlib",
     "joltz @ git+https://github.com/nboyd/joltz",
     "mosaic @ git+https://github.com/escalante-bio/mosaic",
-    "jligandmpnn @ git+https://github.com/ssiddhantsharma/jligandmpnn",
+    "jigandmpnn @ git+https://github.com/nboyd/jigandmpnn",
 ]
 
 [tool.hatch.metadata]
-allow-direct-references = true  # deps below are git+https (joltz, mosaic, jligandmpnn)
+allow-direct-references = true  # deps below are git+https (joltz, mosaic, jigandmpnn)
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nisegrad"]

@@ -16,15 +16,15 @@ NISE (Polizzi lab), which does the same job by gradient-free selection.
 - **The pocket is the limit.** Give the sequence layer a backbone, real or RFdiffusion3-generated, and it
   reaches 0.83 on a real backbone and 0.89 on RFdiffusion3 backbones across the panel, near the real
   binders. The gradient alone cannot build a foldable pocket and collapses to poly-alanine.
-- **Reusable tooling.** A differentiable Boltz-2 affinity head (contributed to joltz) and a
-  parity-checked JAX LigandMPNN port ([jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn)).
+- **Reusable tooling.** A differentiable Boltz-2 affinity head (contributed to joltz); the
+  differentiable inverse-folding term uses [jigandmpnn](https://github.com/nboyd/jigandmpnn) (Boyd).
 
 The method, the controlled study, and a de novo protein-small-molecule affinity benchmark are written up
 in the workshop paper (under review). This repo holds the code and the scored data behind every number.
 
 ## Install
 The repo ships a `uv.lock`, so `uv` is the reliable path. It resolves the `git+https` deps
-(`joltz`, `mosaic`, `jligandmpnn`) that plain pip struggles with:
+(`joltz`, `mosaic`, `jigandmpnn`) that plain pip struggles with:
 ```
 uv sync                       # build .venv from the lockfile
 # GPU JAX for mosaic/joltz on CUDA 12, into the same venv:
@@ -46,12 +46,14 @@ opens it, so you can skip `ccd.pkl`.
 
 **LigandMPNN** (needed *only* for `rescue_backbone.py`, `project.py`, `guided_design.py` — not for the
 core STE panel or baselines, which need only Boltz-2). Run `bash scripts/get_weights.sh`, which fetches
-both files into `weights/` and prints the two env vars to export. Both come from the official LigandMPNN
-repo (`github.com/dauparas/LigandMPNN`) and are not on GitHub as files. To do it by hand:
+the checkpoint into `weights/` and prints the env var to export. It comes from the official LigandMPNN
+repo (`github.com/dauparas/LigandMPNN`) and is not on GitHub as a file. To do it by hand:
 - `ligandmpnn_v_32_010_25.pt` from `files.ipd.uw.edu/pub/ligandmpnn/` (LigandMPNN's `get_model_params.sh`).
   Set `LIGANDMPNN_CKPT` to its path.
-- its reference model module `model_utils.py` (which defines `ProteinMPNN`), placed in a directory so it
-  imports as `ligmpnn_model`. Set `LIGMPNN_MODEL_DIR` to that directory.
+
+The differentiable JAX LigandMPNN itself is [jigandmpnn](https://github.com/nboyd/jigandmpnn) (Boyd), a
+dependency that loads this checkpoint; it vendors the torch reference, so no separate reference module or
+`LIGMPNN_MODEL_DIR` is needed.
 
 **Protenix-v2** (the held-out judge; used by `protenix_score.py` and `panel_run.py`). The judge is a
 separate ByteDance Protenix checkout with its own venv; the scripts run `$PROTENIX_DIR/.venv/bin/protenix
@@ -91,4 +93,4 @@ Run `bash scripts/check_setup.sh` to see what is present and what is reachable b
 Builds on NISE (Polizzi lab), DBMol (Qin et al. 2026), BindEnergyCraft (Nori
 et al. 2025), LambdaZero (Korablyov et al. 2024), LigandMPNN (Dauparas et al.), and RoseTTAFold All-Atom
 (Krishna et al. 2024). Tools: Boltz-2 via [joltz](https://github.com/nboyd/joltz), Protenix, mosaic, and
-[jligandmpnn](https://github.com/ssiddhantsharma/jligandmpnn).
+[jigandmpnn](https://github.com/nboyd/jigandmpnn) (Boyd).
