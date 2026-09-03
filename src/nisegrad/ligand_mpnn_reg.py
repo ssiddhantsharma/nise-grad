@@ -65,7 +65,11 @@ class LigandMPNNRegularizer:
             X=X, mask=f["mask"], residue_idx=f["R_idx"],
             chain_encoding_all=f["chain_labels"],
             Y=Y, Y_t=f["Y_t"], Y_m=f["Y_m"], key=None)
+        # jigandmpnn.decode argsorts decoding_order directly, whereas jligandmpnn used
+        # argsort((chain_mask + 1e-4) * |randn|); pass that pre-argsort value so the decoding
+        # order (hence the teacher-forced log-probs) is byte-identical (verified max|Δ|=0).
+        dec_order = (f["chain_mask"] + 0.0001) * jnp.abs(f["randn"])
         log_probs = self.model.decode(
             S=soft21, h_V=h_V, h_E=h_E, E_idx=E_idx,
-            mask=f["mask"], decoding_order=f["randn"])[0]  # [L,21]
+            mask=f["mask"], decoding_order=dec_order)[0]  # [L,21]
         return nll_from_logprobs(soft_mpnn, log_probs, self.binder_mask), None
