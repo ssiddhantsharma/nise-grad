@@ -14,8 +14,9 @@ NISE (Polizzi lab), which does the same job by gradient-free selection.
   0.93 for the real binders, and it beats gradient-free search (0.51 / 0.48) yet stalls at the same
   ceiling: the optimiser is not the limit.
 - **The pocket is the limit.** Give the sequence layer a backbone, real or RFdiffusion3-generated, and it
-  reaches 0.83 on a real backbone and 0.89 on RFdiffusion3 backbones across the panel, near the real
-  binders. The gradient alone cannot build a foldable pocket and collapses to poly-alanine.
+  reaches a per-ligand best of 0.95 (mean 0.91) on a real backbone and 0.89 on RFdiffusion3 backbones
+  across the panel, at the real binders (0.93). The gradient alone cannot build a foldable pocket and
+  collapses to poly-alanine.
 - **Reusable tooling.** A differentiable Boltz-2 affinity head (contributed to joltz); the
   differentiable inverse-folding term uses [jigandmpnn](https://github.com/nboyd/jigandmpnn) (Boyd).
 
