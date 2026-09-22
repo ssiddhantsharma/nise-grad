@@ -1,0 +1,116 @@
+[
+ {
+  "ligand": "DFHBI",
+  "n_seeds": 5,
+  "mean_iptm": 0.9799,
+  "std_iptm": 0.0058
+ },
+ {
+  "ligand": "DFHBI-1T",
+  "n_seeds": 5,
+  "mean_iptm": 0.9764,
+  "std_iptm": 0.0115
+ },
+ {
+  "ligand": "FL118",
+  "n_seeds": 5,
+  "mean_iptm": 0.8864,
+  "std_iptm": 0.0034
+ },
+ {
+  "ligand": "JF646",
+  "n_seeds": 5,
+  "mean_iptm": 0.9581,
+  "std_iptm": 0.004
+ },
+ {
+  "ligand": "JF660",
+  "n_seeds": 5,
+  "mean_iptm": 0.8814,
+  "std_iptm": 0.0026
+ },
+ {
+  "ligand": "JF669",
+  "n_seeds": 5,
+  "mean_iptm": 0.9529,
+  "std_iptm": 0.0058
+ },
+ {
+  "ligand": "N,N'-diphenyl naphthalenediimide (NDI1)",
+  "n_seeds": 5,
+  "mean_iptm": 0.7605,
+  "std_iptm": 0.0033
+ },
+ {
+  "ligand": "Rhodamine101",
+  "n_seeds": 5,
+  "mean_iptm": 0.9605,
+  "std_iptm": 0.0034
+ },
+ {
+  "ligand": "SiRh",
+  "n_seeds": 5,
+  "mean_iptm": 0.9396,
+  "std_iptm": 0.0023
+ },
+ {
+  "ligand": "amantadine",
+  "n_seeds": 5,
+  "mean_iptm": 0.878,
+  "std_iptm": 0.0075
+ },
+ {
+  "ligand": "apixaban",
+  "n_seeds": 5,
+  "mean_iptm": 0.9667,
+  "std_iptm": 0.0031
+ },
+ {
+  "ligand": "belotecan",
+  "n_seeds": 5,
+  "mean_iptm": 0.9432,
+  "std_iptm": 0.0014
+ },
+ {
+  "ligand": "camptothecin",
+  "n_seeds": 5,
+  "mean_iptm": 0.874,
+  "std_iptm": 0.0069
+ },
+ {
+  "ligand": "cortisol",
+  "n_seeds": 5,
+  "mean_iptm": 0.8623,
+  "std_iptm": 0.0017
+ },
+ {
+  "ligand": "exatecan",
+  "n_seeds": 5,
+  "mean_iptm": 0.9774,
+  "std_iptm": 0.0001
+ },
+ {
+  "ligand": "mefuparib",
+  "n_seeds": 5,
+  "mean_iptm": 0.9887,
+  "std_iptm": 0.0001
+ },
+ {
+  "ligand": "niraparib",
+  "n_seeds": 5,
+  "mean_iptm": 0.9826,
+  "std_iptm": 0.0025
+ },
+ {
+  "ligand": "rucaparib",
+  "n_seeds": 5,
+  "mean_iptm": 0.9902,
+  "std_iptm": 0.0
+ },
+ {
+  "ligand": "veliparib",
+  "n_seeds": 5,
+  "mean_iptm": 0.979,
+  "std_iptm": 0.0026
+ }
+]
