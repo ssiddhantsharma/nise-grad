@@ -20,8 +20,8 @@ NISE (Polizzi lab), which does the same job by gradient-free selection.
 - **Reusable tooling.** A differentiable Boltz-2 affinity head (contributed to joltz); the
   differentiable inverse-folding term uses [jigandmpnn](https://github.com/nboyd/jigandmpnn) (Boyd).
 
-The method, the controlled study, and a de novo protein-small-molecule affinity benchmark are written up
-in the workshop paper (under review). This repo holds the code and the scored data behind every number.
+This repo holds the method, the controlled study, and a de novo protein-small-molecule affinity benchmark:
+the code and the scored data behind every number.
 
 ## Install
 The repo ships a `uv.lock`, so `uv` is the reliable path. It resolves the `git+https` deps
